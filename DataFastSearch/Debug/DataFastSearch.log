@@ -1,0 +1,3 @@
+﻿  DataFastSearch.cpp
+sqlite3.lib(sqlite3.obj) : warning LNK4099: 未找到 PDB“vc120.pdb”(使用“sqlite3.lib(sqlite3.obj)”或在“D:\我的电脑\桌面\日常学习\项目\C++项目\DataFastSearch\Debug\vc120.pdb”中寻找)；正在链接对象，如同没有调试信息一样
+  DataFastSearch.vcxproj -> D:\我的电脑\桌面\日常学习\项目\C++项目\DataFastSearch\Debug\DataFastSearch.exe
