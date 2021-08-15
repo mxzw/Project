@@ -1,0 +1,20 @@
+httplib的原理（客户端和服务端）
+                     srv.Get("/",callback);
+服务端Server：Server对象中 ：Get接口的作用就是将资源路径以及请求方法还有回调函数，在srv对象中的map表中存储起来。
+srv对象中有一张map表,在这里的就是对应的是"/" , GET, callback
+
+Request:
+struct Request {                                                                                                             
+    std::string method;
+    std::string path;
+    Headers headers;
+    std::string body;
+    // for server
+    //....
+    MultipartFormDataMap files;
+    //....
+}
+using MultipartFormDataMap = std::multimap<std::string, MultipartFormData>;
+
+
+原理：https://blog.csdn.net/weixin_43939593/article/details/104263043
