@@ -13,6 +13,7 @@
 using namespace std;
 
 //组织成json格式发送给浏览器
+//这是显示会员信息的结构体
 struct UserMessage    
 {    
 
@@ -33,14 +34,28 @@ struct UserMessage
   XPACK(O(member_id,member_name,member_phone,member_sex,member_age,card_name,login_date,member_state,expire_date));    
 };  
 
+//这是显示会员卡信息的结构体
+struct CardMessage
+{
+  CardMessage(int tid,string tname,int tday,int tmoney):type_id(tid),type_name(tname),type_day(tday),type_money(tmoney)
+  {}
+  int type_id;
+  string type_name;
+  int type_day;
+  int type_money;
+  XPACK(O(type_id,type_name,type_day,type_money));
+};
+
 class Member
 {
   public:
     Member(){}
     ~Member(){}
     //查询会员卡的类型
-    void MemberCardQuery(ManageDB*& md_,Json::Value& v)
+    string MemberCardQuery(ManageDB*& md_)
     {
+      list<CardMessage> lcm;
+      lcm.clear();
       char sql[1024]={0};
 #define CardQuery_SQL "select * from MemberCardType;"
       snprintf(sql,sizeof(sql)-1,CardQuery_SQL);
@@ -49,17 +64,24 @@ class Member
       {
         cout << "ExecSQL failed : MemberCardQuery, sql is " << sql << endl;
         mysql_free_result(res);
-        return ;
+        return "";
       }
 
-      MYSQL_ROW row = mysql_fetch_row(res);
+      MYSQL_ROW row;
+      while((row = mysql_fetch_row(res))!=NULL)
+      {
+        int type_id = atoi(row[0]);
+        string type_name = row[1];
+        int type_day = atoi(row[2]);
+        int type_money = atoi(row[3]);
 
-      v["typeId"] = row[0];
-      v["typeName"] = row[1];
-      v["typeDay"] = row[2];
-      v["typeMoney"] = row[3];
+        CardMessage cm(type_id,type_name,type_day,type_money);
+        lcm.push_back(cm);
+      }
 
       mysql_free_result(res);
+
+      return xpack::json::encode(lcm);
     }
     //查询用户信息 --->返回组织好的json数据
     string MemberMessageQuery(ManageDB*& md_)

@@ -136,17 +136,14 @@ class GymManageSystem
     //查询会员卡类型
     http_svr_.Post("/CardQuery",[=](const Request& req,Response& res)
         {
-          Json::Value res_value;
-          this->mb_->MemberCardQuery(md_,res_value);
-          res.body = this->Serializa(res_value);
-          res.set_header("content-Type","application");
+          res.body = this->mb_->MemberCardQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
         });
 
     
     //MemberQuery  查询用户的所有信息，返回给bootstrap 绘制表格
     http_svr_.Post("/MemberQuery",[=](const Request& req, Response& res)
         {
-          
           res.body = this->mb_->MemberMessageQuery(md_);
           res.set_header("content-Type","application/json;charset=UTF-8");
         });

@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>会员列表</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <link rel="stylesheet" href="../static/bootstrap/css/bootstrap.css" />
     <link rel="stylesheet" href="../static/table/bootstrap-table.min.css" />
     <script type="text/javascript" src="../static/jquery-3.2.1.min.js"></script>
@@ -17,33 +18,34 @@
 
     <script>
         $(function () {
-          /*  $.post("../../CardQuery",{},function (data) {
+            $.post("../../CardQuery",{},function (data) {
                 window.console.log(data);
                 var e=data;
                 $(e).each(function () {
-                    $('#ktype').append('<option value='+this.typeId+' >'+this.typeName+'</option>');
+                    //$($.parseHTML('#ktype', document, true)).append('<option value='+this.type_id+' >'+this.type_name+'</option>');
+                    $('#ktype').append('<option value='+this.type_id+' >'+this.type_name+'</option>');
                 })
-            });*/
-           /* $('#srdata').datetimepicker({
+            });
+           $('#srdata').datetimepicker({
                 //viewMode: 'day',
                 format: 'MM-DD'
             });
             $('#upsrdata').datetimepicker({
                 //viewMode: 'day',
                 format: 'MM-DD'
-            });*/
+            });
             $('#dg').bootstrapTable({
                 url:'../../MemberQuery',
                 method:'post',
-                //contentType:"application/json",
+                contentType:"application/x-www-form-urlencoded;charset=utf-8'",
                 // columns中的对象:title 指的是填到表头的信息，而field 指的是服务器端返回的json数据 rows:[{id:'1',name:'xxx'}]
                 columns:[
                     { field:'member_id',title:'会员编号',sortable: true},
                     { field:'member_name',title:'名称',sortable: true},
                     { field:'member_phone',title:'电话',sortable: true},
                     { field:'member_sex',title:'性别',
-                        formatter:function (value,row,index) {
-                            if(row.memberSex==0){
+                        formatter:function (value,data,index) {
+                            if(data.member_sex===0){
                                 return "女";
                             }else{
                                 return "男";
@@ -51,11 +53,11 @@
                         }
                     },
                     { field:'member_age',title:'年龄',sortable: true},
-                    { field:'member_typeid.typeName',title:'卡类型'},
+                    { field:'card_name',title:'卡类型'},
                     { field:'login_date',title:'录入日期'},
                     { field:'member_state',title:'会员状态',
-                        formatter:function (value,row,index) {
-                            if(row.member_state === 1){
+                        formatter:function (value,data,index) {
+                            if(data.member_state === 1){
                                 return "正常"
                             }else{
                                 return "<p style='color:red'>请续卡</p>"
@@ -63,13 +65,13 @@
                         }
                     },
                     { field:'expire_date',title:'到期日期'},
-                   /* {
+                   {
                         field:'xx',title:'操作',
                         formatter : function(value, row, index) {
                             return "<a title='删除' href='javascript:del("
                                 + row.memberId + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a> <span class='glyphicon glyphicon-pencil'></span></a>";
                         }
-                    }*/
+                    }
                 ],
                 queryParamsType:'', //得到查询的参数
                 queryParams:queryParams,
@@ -79,8 +81,11 @@
                 pageSize:5, //每页的记录行数（*）
                 pagination:true, //是否显示分页（*）
                 sidePagination:'client', //分页方式：client客户端分页，server服务端分页（*）
+                // sidePagination: "client",  //分页方式：client客户端分页，server服务端分页（*）
+                //dataField: "rows",  // 当分页方式为客户端(client)时，服务端必须用"count"；分页为"server"时，可自定义，默认"rows"。
+                //totalField: 'total', // 当分页方式为客户端(client)时，服务端必须用"data"；分页为"server"时，可自定义，默认"total"。
 
-             /*   onDblClickRow:function(row,$element,field) {
+                onDblClickRow:function(row,$element,field) {
                     $('#updateeModal').modal('show');
                     $.post("../../CardQuery",{},function (releset) {
                         var e=releset;
@@ -102,7 +107,7 @@
                     $('#upage').val(row.memberAge);
                     $('#upid').val(row.memberId);
 
-                }*/
+                }
             })
         });
 
