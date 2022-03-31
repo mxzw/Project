@@ -26,18 +26,18 @@
                     $('#ktype').append('<option value='+this.type_id+' >'+this.type_name+'</option>');
                 })
             });
-           $('#srdata').datetimepicker({
+          /* $('#srdata').datetimepicker({
                 //viewMode: 'day',
                 format: 'MM-DD'
             });
             $('#upsrdata').datetimepicker({
                 //viewMode: 'day',
                 format: 'MM-DD'
-            });
+            });*/
             $('#dg').bootstrapTable({
                 url:'../../MemberQuery',
                 method:'post',
-                contentType:"application/x-www-form-urlencoded;charset=utf-8'",
+                contentType:"application/x-www-form-urlencoded;charset=utf-8",
                 // columns中的对象:title 指的是填到表头的信息，而field 指的是服务器端返回的json数据 rows:[{id:'1',name:'xxx'}]
                 columns:[
                     { field:'member_id',title:'会员编号',sortable: true},
@@ -53,7 +53,7 @@
                         }
                     },
                     { field:'member_age',title:'年龄',sortable: true},
-                    { field:'card_name',title:'卡类型'},
+                    { field:'card_type.type_name',title:'卡类型'},
                     { field:'login_date',title:'录入日期'},
                     { field:'member_state',title:'会员状态',
                         formatter:function (value,data,index) {
@@ -67,9 +67,9 @@
                     { field:'expire_date',title:'到期日期'},
                    {
                         field:'xx',title:'操作',
-                        formatter : function(value, row, index) {
+                        formatter : function(value, data, index) {
                             return "<a title='删除' href='javascript:del("
-                                + row.memberId + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a> <span class='glyphicon glyphicon-pencil'></span></a>";
+                                + data.member_id + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a> <span class='glyphicon glyphicon-pencil'></span></a>";
                         }
                     }
                 ],
@@ -85,7 +85,7 @@
                 //dataField: "rows",  // 当分页方式为客户端(client)时，服务端必须用"count"；分页为"server"时，可自定义，默认"rows"。
                 //totalField: 'total', // 当分页方式为客户端(client)时，服务端必须用"data"；分页为"server"时，可自定义，默认"total"。
 
-                onDblClickRow:function(row,$element,field) {
+                onDblClickRow:function(data,$element,field) {
                     $('#updateeModal').modal('show');
                     $.post("../../CardQuery",{},function (releset) {
                         var e=releset;
@@ -93,19 +93,19 @@
                         var tttt="";
                         var ttt="<option value='-1'>"+"--请选择--"+"</option>";
                         $(e).each(function () {
-                            tt += "<option value='"+this.typeId+"'>"+""+this.typeName+"</option>";
+                            tt += "<option value='"+this.type_id+"'>"+""+this.type_name+"</option>";
                             tttt=ttt+tt;
                             $('#upoptype').html(tttt);
                         })
                     }),//手下菠萝已足够
-                        $('#upname').val(row.memberName);
-                    $('#upphone').val(row.memberPhone);
-                    $('#upsex').val(row.memberSex);
+                        $('#upname').val(data.member_name);
+                    $('#upphone').val(data.member_phone);
+                    $('#upsex').val(data.member_sex);
                  //   $('#upsrdata').val(row.birthday);
-                    $('#upoptype').val(row.membertypes.typeId);
-                    $('#updata').val(row.nenberDate);
-                    $('#upage').val(row.memberAge);
-                    $('#upid').val(row.memberId);
+                    $('#upoptype').val(data.card_type.type_id);
+                    $('#update').val(data.login_date);
+                    $('#upage').val(data.member_age);
+                    $('#upid').val(data.member_id);
 
                 }
             })
@@ -125,24 +125,34 @@
 
         //查询
         function search(){
-            var opt=$('#dg').bootstrapTable('getOptions');
-            var hyid=$('#hyid').val();
-            var ktype=$('#ktype').val();
 
+            var searchData = {};
+            searchData["search_name"]=$('#hyid').val();
+            searchData["search_typeid"]=$('#ktype').val();
 
-            $.post("./memberQuery",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"hyname":hyid,"ktype":ktype},function (data) {
-                $("#dg").bootstrapTable('load',data) ;
-            })
+            $.ajax(
+                {
+                    url:"../../MemberSearch",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(searchData),
+                    async:false,
+                    success:function (data)
+                    {
+                        $("#dg").bootstrapTable('load',data) ;
+                    },
+                });
         }
+
         function insert() {
             $('#exampleModal').modal('show');
-            $.post("../ktype/query",{},function (releset) {
+            $.post("../../CardQuery",{},function (releset) {
                 var e=releset;
                 var tt ="";
                 var tttt="";
                 var ttt="<option value='-1'>"+"--请选择--"+"</option>";
                 $(e).each(function () {
-                    tt += "<option value='"+this.typeId+"'>"+""+this.typeName+"</option>";
+                    tt += "<option value='"+this.type_id+"'>"+""+this.type_name+"</option>";
                     tttt=ttt+tt;
                     $('#optype').html(tttt);
                 })
@@ -156,82 +166,90 @@
 
             $('#data').val(str)
         }
-        function del(memid) {
-            $.post("../menber/delete",{"memid":memid},function (releset) {
-                if(releset != null){
-                    $("#dg").bootstrapTable('load',releset) ;
-                    swal(
-                        {
-                            title:"删除成功",
-                            type:"success",
-                            timer: 1500,
-                            showConfirmButton: false
+        function del(mid) {
+            var del_data= {};
+            del_data["member_id"] = mid;
+            $.ajax(
+                {
+                    url: "../../DelMember",
+                    type: "POST",
+                    dataType: "JSON",
+                    data: JSON.stringify(del_data),
+                    async: false,
+                    success: function (data) {
+                        if(data != null){
+                            $("#dg").bootstrapTable('load',data) ;
+                            swal(
+                                {
+                                    title:"删除成功",
+                                    type:"success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }else{
+                            swal(
+                                {
+                                    title:"删除失败",
+                                    type:"warning",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
                         }
-                    )
-                }else{
-                    swal(
-                        {
-                            title:"删除失败",
-                            type:"warning",
-                            timer: 1500,
-                            showConfirmButton: false
-                        }
-                    )
-                }
-            })
+                    }
+                });
         }
         function tianjia() {
             if(!validateAdd()){
                 return;
             }
-            var name=$('#name').val();
-            var phone =$('#phone').val();
-            var sex=$('#sex').val();
-            var srdata=$('#srdata').val();
-            var optype=$('#optype').val();
-            var data=$('#data').val();
-            var age=$('#age').val();
 
-
-            $.post("../ktype/query2",{"xztype":optype},function (releset) {
-                var typetian=releset.typeDay;
-
-                var date1 = new Date();
-                var date2 = new Date(date1);
-                var qb=date2.setDate(date1.getDate() + typetian);
-                var rq=date2.getFullYear() + "-" + (date2.getMonth() + 1) + "-" + date2.getDate();
-                //$.post("../menber/insert",{"memberName":name,"memberPhone":phone,"memberSex":sex,"birthday":srdata,"Membertypes.typeId":optype,"nenberDate":data,"memberAge":age,"Memberxufei":rq},function (releset) {
-                $.post("../menber/insert",{"memberName":name,"memberPhone":phone,"memberSex":sex,"Membertypes.typeId":optype,"nenberDate":data,"memberAge":age,"Memberxufei":rq},function (releset) {
-                    if(releset != null){
-                        $("#dg").bootstrapTable('load',releset) ;
-                        $('#exampleModal').modal('hide');
-                        swal(
-                            {
-                                title:"添加成功",
-                                type:"success",
-                                timer: 1500,
-                                showConfirmButton: false
-                            }
-                        )
-                    }else{
-                        swal(
-                            {
-                                title:"添加失败",
-                                type:"warning",
-                                timer: 1500,
-                                showConfirmButton: false
-                            }
-                        )
+            var AddDate = {};
+            AddDate["member_name"]=$('#name').val();
+            AddDate["member_phone"] =$('#phone').val();
+            AddDate["member_sex"]=$('#sex').val();
+            // var srdata=$('#upsrdata').val();
+            AddDate["member_typeid"]=$('#optype').val();
+            AddDate["login_date"]=$('#data').val();
+            AddDate["member_age"]=$('#age').val();
+            $.ajax(
+                {
+                    url:"../../AddMember",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(AddDate),
+                    async:false,
+                    success:function (data) {
+                        if(data != null){
+                            $("#dg").bootstrapTable('load',data) ;
+                            $('#exampleModal').modal('hide');
+                            swal(
+                                {
+                                    title:"添加成功",
+                                    type:"success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }else{
+                            swal(
+                                {
+                                    title:"添加失败",
+                                    type:"warning",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }
                     }
-                })
-            })
+                });
         }
 
         function validateAdd() {
             $("#name").parent().find("span").remove();
             $("#phone").parent().find("span").remove();
             $("#age").parent().find("span").remove();
-            $("#srdata").parent().find("span").remove();
             $("#optype").parent().find("span").remove();
 
             var name = $("#name").val().trim();
@@ -262,13 +280,6 @@
                 return false;
             }
 
-
-            var srdata = $("#srdata").val().trim();
-            if(srdata == null || srdata == ""){
-                $("#srdata").parent().append("<span style='color:red'>请选择生日</span>");
-                return false;
-            }
-
             var optype = $("#optype").val().trim();
             if(optype==-1){
                 $("#optype").parent().append("<span style='color:red'>请选择会员卡型</span>");
@@ -282,14 +293,51 @@
             if(!validateUpd()){
                 return;
             }
-            var id=$('#upid').val();
-            var name=$('#upname').val();
-            var phone =$('#upphone').val();
-            var sex=$('#upsex').val();
-            var srdata=$('#upsrdata').val();
-            var optype=$('#upoptype').val();
-            var data=$('#updata').val();
-            var age=$('#upage').val();
+
+            var updateDate = {};
+            updateDate["member_id"]=$('#upid').val();
+            updateDate["member_name"]=$('#upname').val();
+            updateDate["member_phone"] =$('#upphone').val();
+            updateDate["member_sex"]=$('#upsex').val();
+           // var srdata=$('#upsrdata').val();
+            updateDate["member_typeid"]=$('#upoptype').val();
+            updateDate["login_date"]=$('#update').val();
+            updateDate["member_age"]=$('#upage').val();
+            $.ajax(
+            {
+                url:"../../MemberUpdate",
+                type:"POST",
+                dataType:"JSON",
+                data: JSON.stringify(updateDate),
+                async:false,
+                success:function (data)
+                {
+                    $("#dg").bootstrapTable('load',data) ;
+                    if(data != null){
+                        $("#dg").bootstrapTable('load',data) ;
+                        $('#updateeModal').modal('hide');
+                        swal(
+                            {
+                                title:"修改成功",
+                                type:"success",
+                                timer: 1500,
+                                showConfirmButton: false
+                            }
+                        )
+                    }else{
+                        swal(
+                            {
+                                title:"修改失败",
+                                type:"warning",
+                                timer: 1500,
+                                showConfirmButton: false
+                            }
+                        )
+                    }
+                },
+            });
+
+            /*
             $.post("../ktype/query2",{"xztype":optype},function (releset) {
                 var typetian=releset.typeDay;
 
@@ -297,7 +345,7 @@
                 var date2 = new Date(date1);
                 var qb=date2.setDate(date1.getDate() + typetian);
                 var rq=date2.getFullYear() + "-" + (date2.getMonth() + 1) + "-" + date2.getDate();
-                //$.post("../menber/update",{"memberId":id,"memberName":name,"memberPhone":phone,"memberSex":sex,"birthday":srdata,"membertypes.typeId":optype,"nenberDate":data,"memberAge":age,"Memberxufei":rq},function (releset) {
+
                 $.post("../menber/update",{"memberId":id,"memberName":name,"memberPhone":phone,"memberSex":sex,"membertypes.typeId":optype,"nenberDate":data,"memberAge":age,"Memberxufei":rq},function (releset) {
                     $("#dg").bootstrapTable('load',releset) ;
                     if(releset != null){
@@ -322,7 +370,7 @@
                         )
                     }
                 })
-            })
+            })*/
         }
 
         function validateUpd() {
@@ -361,11 +409,11 @@
             }
 
 
-            var upsrdata = $("#upsrdata").val().trim();
+           /* var upsrdata = $("#upsrdata").val().trim();
             if(upsrdata == null || upsrdata == ""){
                 $("#upsrdata").parent().append("<span style='color:red'>请选择生日</span>");
                 return false;
-            }
+            }*/
 
             var upoptype = $("#upoptype").val().trim();
             if(upoptype==-1){
@@ -436,10 +484,6 @@
                         <input type="text" class="form-control" id="age">
                     </div>
                     <div class="form-group">
-                        <label for="srdata" class="control-label">生日:</label>
-                        <input type="text" class="form-control" id="srdata">
-                    </div>
-                    <div class="form-group">
                         <label for="optype" class="control-label">卡型:</label>
                         <select class="form-control" id="optype">
                             <option value="0">请选择</option>
@@ -489,10 +533,11 @@
                         <label for="age" class="control-label">年龄:</label>
                         <input type="text" class="form-control" id="upage">
                     </div>
+                    <!--
                     <div class="form-group">
                         <label for="srdata" class="control-label">生日:</label>
                         <input type="text" class="form-control" id="upsrdata">
-                    </div>
+                    </div> -->
                     <div class="form-group">
                         <label for="optype" class="control-label">卡型:</label>
                         <select class="form-control" id="upoptype">
@@ -501,7 +546,7 @@
                     </div>
                     <div class="form-group">
                         <label for="data" class="control-label">时间:</label>
-                        <input type="text" class="form-control" id="updata" disabled="disabled">
+                        <input type="text" class="form-control" id="update" disabled="disabled">
                     </div>
                 </form>
             </div>

@@ -170,9 +170,10 @@ class ManageDB{
     bool ExecSQL(const string& sql,MYSQL_RES*& res)
     {
       //设置当前字符集
-      mysql_query(&mq_,"set name utf8");
+      mysql_query(&mq_,"set names \'utf8\'");
       //解决从结果集中读取中文数据显示乱码问题
       mysql_query(&mq_,"set character_set_results=utf8");
+      mysql_query(&mq_,"set character set utf8");
 
       //等于0就成功，不等于0就失败
       if(mysql_query(&mq_,sql.c_str())!=0)
@@ -196,7 +197,10 @@ class ManageDB{
     bool ExecSQL(const string& sql)
     {
       //设置当前字符集
-      mysql_query(&mq_,"set name utf8");
+      mysql_query(&mq_,"set names \'utf8\'");
+      //解决从结果集中读取中文数据显示乱码问题
+      mysql_query(&mq_,"set character_set_results=utf8");
+      mysql_query(&mq_,"set character set utf8");
 
       //等于0就成功，不等于0就失败
       if(mysql_query(&mq_,sql.c_str())!=0)

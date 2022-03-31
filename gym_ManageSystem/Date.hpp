@@ -59,9 +59,17 @@ class Date{
 
       tm *ltm = localtime(&now);
 
+      
+      string mo = to_string(1 + ltm->tm_mon);
+      if(mo.length() < 2)
+        mo = "0" + mo;
+      string dy = to_string(ltm->tm_mday);
+      if(dy.length() < 2)
+        dy = "0" + dy;
+
       res += to_string(1900 + ltm->tm_year) + "-"; //年
-      res += to_string(1 + ltm->tm_mon) + "-"; //月
-      res += to_string(ltm->tm_mday); //日
+      res += mo + "-"; //月
+      res += dy; //日
 
       return res;
 
@@ -69,7 +77,13 @@ class Date{
     //将当前时间字符串化
     string ToString() const
     {
-      return "" + to_string(_year) + "-" + to_string(_month) + "-" + to_string(_day);
+      string mo = to_string(_month);
+      if(mo.length() < 2)
+        mo = "0" + mo;
+      string dy = to_string(_day);
+      if(dy.length() < 2)
+        dy = "0" + dy;
+      return "" + to_string(_year) + "-" + mo + "-" + dy;
     }
 
     // 拷贝构造函数

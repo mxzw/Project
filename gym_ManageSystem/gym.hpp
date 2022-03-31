@@ -147,6 +147,63 @@ class GymManageSystem
           res.body = this->mb_->MemberMessageQuery(md_);
           res.set_header("content-Type","application/json;charset=UTF-8");
         });
+
+    //MemberUpdate 修改用户的信息
+    http_svr_.Post("/MemberUpdate",[=](const Request& req, Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          if(!this->mb_->UpdateMemberMessage(md_,req_value))
+            cout << "/MemberUpdate ----> update failed" << endl;
+          else
+          {
+            cout << "UpdateMemberMessage success" << endl;
+            res.body = this->mb_->MemberMessageQuery(md_);
+
+          }
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //MemberSearch 搜素用户信息
+    http_svr_.Post("/MemberSearch",[=](const Request& req, Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+
+          res.body = this->mb_->MemberMessageSearch(md_,req_value);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //添加一个新用户
+    http_svr_.Post("/AddMember",[=](const Request& req, Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+
+          if(!this->mb_->AddMember(md_,req_value))
+            cout << "/AddMember ---> add failed" << endl;
+          else
+            res.body = this->mb_->MemberMessageQuery(md_);
+            
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //删除一个用户
+    http_svr_.Post("/DelMember",[=](const Request& req, Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          if(!this->mb_->DelMember(md_,req_value))
+            cout << "/DelMember ---> add failed" << endl;
+          else
+            res.body = this->mb_->MemberMessageQuery(md_);
+            
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
      
 
       //绑定地址
