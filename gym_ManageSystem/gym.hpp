@@ -204,6 +204,111 @@ class GymManageSystem
             
           res.set_header("content-Type","application/json;charset=UTF-8");
         });
+    //确定会员卡对应金额
+    http_svr_.Post("/QueryCardMoney",[=](const Request& req, Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+
+          Json::Value v;
+          v["type_money"] = this->mb_->QueryCardMoney(md_,req_value);
+          res.body = this->Serializa(v);
+          res.set_header("content-Type","application");
+        });
+    //用户续卡操作的实现
+    http_svr_.Post("/UpdateMemberCardMessage",[=](const Request& req, Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          int flag = 1;
+          // 1. 根据member_id获取对应的会员卡类型的天数，并将其加到increase_day这一列中
+          int member_id = stoi(req_value["member_id"].asString());
+          if(!this->mb_->UpdateMemberIncreaseDay(md_,member_id))
+          {
+            cout << "UpdateMemberIncreaseDay failed !" << endl;
+            flag = -1;
+          }
+          
+            // 2. 根据type_id 修改对应用户的会员卡类型
+          int type_id = stoi(req_value["type_id"].asString());
+          if(!this->mb_->UpdateMemberCardType(md_,member_id,type_id))
+          {
+            cout << "UpdateMemberCardType failed" << endl;
+            flag = -1;
+          }
+            // 3.将结果返回给前端
+          if(flag)
+            res.body = this->mb_->MemberMessageQuery(md_);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+            
+        });
+    //根据会员卡名称模糊搜素会员卡所有信息
+    http_svr_.Post("/MemberCardSearch",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          string type_name = req_value["type_name"].asString();
+          res.body = this->mb_->CardMessageSearch(md_,type_name);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+          
+        });
+    //根据会员卡id搜索会员卡的所有信息
+    http_svr_.Post("/IdToCardMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          int type_id = stoi(req_value["type_id"].asString());
+          res.body = this->mb_->IdToCardMessage(md_,type_id);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+
+        });
+    //修改会员卡的信息
+    http_svr_.Post("/UpdateCardMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->mb_->UpdateCardMessage(md_,req_value))
+            cout << "UpdateCardMessage failed ! " << endl;
+          else 
+            res.body = this->mb_->MemberCardQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+
+        });
+    //新增一个会员卡
+    http_svr_.Post("/AddCardMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->mb_->AddCardMessage(md_,req_value))
+            cout << "UpdateCardMessage failed ! " << endl;
+          else 
+            res.body = this->mb_->MemberCardQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+
+        });
+    //删除一个会员卡
+    http_svr_.Post("/DelCardMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->mb_->DelCardMessage(md_,req_value))
+            cout << "UpdateCardMessage failed ! " << endl;
+          else 
+            res.body = this->mb_->MemberCardQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+
+        });
+
      
 
       //绑定地址

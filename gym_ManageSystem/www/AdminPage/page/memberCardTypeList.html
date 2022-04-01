@@ -1,7 +1,7 @@
 
 
 <script src="../static/jquery-3.2.1.min.js">
-    window.onunload(alert("jin5"))
+
 </script>
 <html>
 <head>
@@ -22,21 +22,22 @@
     <script>
         $(function () {
             $('#table').bootstrapTable({
-                url:'../ktype/queryq',
+                url:'../../CardQuery',
                 method:'post',
                 contentType:"application/x-www-form-urlencoded",
                 columns:[
-                    { field:'typeId',title:'会员卡编号',sortable: true},
-                    { field:'typeName',title:'会员卡名称',sortable: true},
-                    { field:'typeDay',title:'有效天数',sortable: true},
-                    { field:'typeciShu',title:'有效次数',sortable: true},
-                    { field:'typemoney',title:'售价',sortable: true},
+                    { field:'type_id',title:'会员卡编号',sortable: true},
+                    { field:'type_name',title:'会员卡名称',sortable: true},
+                    { field:'type_day',title:'有效天数',sortable: true},
+                    { field:'type_money',title:'售价',sortable: true},
                     {
                         field:'xx',title:'操作',
-                        formatter : function(value, row, index) {
-                            return " <a href='javascript:upd1("+row.typeId+")' class='glyphicon glyphicon-pencil'></a>";
-                        }
+                        formatter : function(value, data, index) {
+                            return "<a title='删除' href='javascript:del("
+                            + data.type_id + ")'><span class='glyphicon glyphicon-trash'></span></a> | " +
+                                "<a href='javascript:upd1(" +data.type_id+")' class='glyphicon glyphicon-pencil'></a>";
 
+                        }
                     }
                 ],
                 queryParamsType:'',
@@ -46,12 +47,12 @@
                 pageNumber:1,
                 pageSize:5,
                 pagination:true,
-                sidePagination:'server',
+                sidePagination:'client',
 
             })
         });
         //删除
-        function del1(id){
+        function del(id){
 
             swal({
                     title: "确定删除吗？",
@@ -66,12 +67,23 @@
                 },
                 function (isConfirm) {
                     if (isConfirm) {
-                        var opt=$('#table').bootstrapTable('getOptions');
-                        var typeId=$('#cardid').val();
-                        $.post('../metype/del',{'typeId':id,"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"typeName":typeId},function(data){
-                            //重新给table绑定数据
-                            $("#table").bootstrapTable("load",data) ;
-                        }) ;
+                        console.log(isConfirm);
+                        
+                        var returnData = {};
+                        returnData["type_id"] = id;
+
+                        $.ajax(
+                            {
+                                url:"../../DelCardMessage",
+                                type:"POST",
+                                dataType:"JSON",
+                                data: JSON.stringify(returnData),
+                                async:false,
+                                success:function (data)
+                                {
+                                    $("#table").bootstrapTable('load',data) ;
+                                },
+                            })
                         swal("删除！", "删除成功",
                             "success");
 
@@ -85,20 +97,29 @@
         //获取当前的条件个页面页数即使更新值
         function queryParams(afds){
             var i={
-                "pageSize":afds.pageSize,
-                "pageNumber":afds.pageNumber,
-                "typeId":$('#cardid').val(),
+               // "pageSize":afds.pageSize,
+              //  "pageNumber":afds.pageNumber,
+                "type_id":$('#cardid').val(),
             };
             return i;
         }
         //查询
         function search(){
-            var opt=$('#table').bootstrapTable('getOptions');
-            var typeId=$('#cardid').val();
+            var searchData = {};
+            searchData["type_name"]=$('#cardid').val();
 
-            $.post("../ktype/queryq",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"typeName":typeId},function (releset) {
-                $("#table").bootstrapTable('load',releset) ;
-            })
+            $.ajax(
+                {
+                    url:"../../MemberCardSearch",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(searchData),
+                    async:false,
+                    success:function (data)
+                    {
+                        $("#table").bootstrapTable('load',data) ;
+                    },
+                })
         }
 
         function save(){
@@ -106,29 +127,48 @@
                 return;
             }
             //接收数据
-            var opt=$('#table').bootstrapTable('getOptions');
-            var typeId=$('#cardid').val();
-            var name=$("#name").val();
-            var tianshu = $("#tianshu").val();
-            var cishu = $("#cishu").val();
-            var money = $("#money").val();
+            var returnData = {};
+            returnData["type_name"] =$("#name").val();
+            returnData["type_day"] = $("#tianshu").val();
+            returnData["type_money"] = $("#money").val();
             $("#myModal").modal("hide") ;
-            $.post('../metype/add',{'typeName':name,'typeciShu':cishu,'typeDay':tianshu,'typemoney':money},function(data){
-
-                $("#table").bootstrapTable("load",data) ;
-                $.post("../ktype/queryq",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"typeName":typeId},function (releset) {
-                    $("#table").bootstrapTable('load',releset) ;
-                })
-                swal("添加！", "添加成功",
-                    "success");
-            }) ;
+            $.ajax(
+                {
+                    url:"../../AddCardMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        if(data != null){
+                            $("#table").bootstrapTable('load',data) ;
+                            swal(
+                                {
+                                    title:"修改成功",
+                                    type:"success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }else{
+                            swal(
+                                {
+                                    title:"修改失败",
+                                    type:"warning",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }
+                    },
+                });
         }
 
 
         function validateAdd() {
             $("#name").parent().find("span").remove();
             $("#tianshu").parent().find("span").remove();
-            $("#cishu").parent().find("span").remove();
             $("#money").parent().find("span").remove();
 
             var name = $("#name").val().trim();
@@ -147,18 +187,6 @@
                 $("#tianshu").parent().append("<span style='color:red'>有效天数只能为正整数</span>");
                 return false;
             }
-
-            var cishu = $("#cishu").val().trim();
-            if(cishu == null || cishu == ""){
-                $("#cishu").parent().append("<span style='color:red'>请填写有效次数</span>");
-                return false;
-            }
-
-            if(!(/^(0|\+?[1-9][0-9]*)$/.test(cishu))){
-                $("#cishu").parent().append("<span style='color:red'>有效次数只能为0或者正整数</span>");
-                return false;
-            }
-
             var money = $("#money").val().trim();
             if(money == null || money == ""){
                 $("#money").parent().append("<span style='color:red'>请填写费用</span>");
@@ -176,41 +204,74 @@
         function upd1(id){
             $("#myModal2").modal("show");
             $('#id').val(id);
-            $.post('../metype/cha',{'typeId':id},function(data){
-                $("#table").bootstrapTable("load",data) ;
-                $("#xgname").val(data.typeName);
-                $("#xgtianshu").val(data.typeDay);
-                $("#xgcishu").val(data.typeciShu);
-                $("#xgmoney").val(data.typemoney);
-            }) ;
+            var returnData = {};
+            returnData["type_id"]=id;
 
+            $.ajax(
+                {
+                    url:"../../IdToCardMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        //$("#table").bootstrapTable('load',data) ;
+                        $("#xgname").val(data.type_name);
+                        $("#xgtianshu").val(data.type_day);
+                        $("#xgmoney").val(data.type_money);
+                    },
+                })
         }
         function upd(){
             if(!validateUpd()){
                 return;
             }
-            var opt=$('#table').bootstrapTable('getOptions');
-            var typeId=$('#cardid').val();
-            var id =  $('#id').val();
-            var name = $("#xgname").val();
-            var tianshu=$("#xgtianshu").val();
-            var cishu= $("#xgcishu").val();
-            var money= $("#xgmoney").val();
+            var returnData = {};
+
+            returnData["type_id"]=$('#id').val();
+
+            returnData["type_name"]= $("#xgname").val();
+            returnData["type_day"]=$("#xgtianshu").val();
+            returnData["type_money"]= $("#xgmoney").val();
             $("#myModal2").modal("hide") ;
-            $.post('../metype/upd',{'typeId':id,'typeName':name,'typeciShu':cishu,'typeDay':tianshu,'typemoney':money},function(data){
-                $.post("../ktype/queryq",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"typeName":typeId},function (releset) {
-                    $("#table").bootstrapTable('load',releset) ;
+
+            $.ajax(
+                {
+                    url:"../../UpdateCardMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        if(data != null){
+                            $("#table").bootstrapTable('load',data) ;
+                            swal(
+                                {
+                                    title:"修改成功",
+                                    type:"success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }else{
+                            swal(
+                                {
+                                    title:"修改失败",
+                                    type:"warning",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }
+                    },
                 })
-                $("#table").bootstrapTable("load",data) ;
-                swal("修改！", "修改成功",
-                    "success");
-            }) ;
         }
 
         function validateUpd() {
             $("#xgname").parent().find("span").remove();
             $("#xgtianshu").parent().find("span").remove();
-            $("#xgcishu").parent().find("span").remove();
             $("#xgmoney").parent().find("span").remove();
 
             var xgname = $("#xgname").val().trim();
@@ -227,17 +288,6 @@
 
             if(!(/^[1-9]\d*$/.test(xgtianshu))){
                 $("#xgtianshu").parent().append("<span style='color:red'>有效天数只能为正整数</span>");
-                return false;
-            }
-
-            var xgcishu = $("#xgcishu").val().trim();
-            if(xgcishu == null || xgcishu == ""){
-                $("#xgcishu").parent().append("<span style='color:red'>请填写有效次数</span>");
-                return false;
-            }
-
-            if(!(/^(0|\+?[1-9][0-9]*)$/.test(xgcishu))){
-                $("#xgcishu").parent().append("<span style='color:red'>有效次数只能为0或者正整数</span>");
                 return false;
             }
 
@@ -302,12 +352,6 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="cishu" class="col-sm-4 control-label"style="margin-top: 10px">有效次数</label>
-                        <div class="col-sm-8">
-                            <input type="text"style="margin-top: 10px" class="form-control" id="cishu" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
-                        </div>
-                    </div>
-                    <div class="form-group">
                         <label for="money" class="col-sm-4 control-label"style="margin-top: 10px">费用</label>
                         <div class="col-sm-8">
                             <input type="text"style="margin-top: 10px" class="form-control" id="money" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
@@ -347,12 +391,6 @@
                         <label for="xgtianshu" class="col-sm-4 control-label"style="margin-top: 10px">有效天数</label>
                         <div class="col-sm-8">
                             <input type="text"style="margin-top: 10px" class="form-control" id="xgtianshu" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="xgcishu" class="col-sm-4 control-label"style="margin-top: 10px">有效次数</label>
-                        <div class="col-sm-8">
-                            <input type="text"style="margin-top: 10px" class="form-control" id="xgcishu" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
                         </div>
                     </div>
                     <div class="form-group">

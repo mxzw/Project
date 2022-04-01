@@ -17,54 +17,54 @@
     <link rel="stylesheet" href="../static/date/bootstrap-datetimepicker.min.css" />
     <script type="text/javascript" src="../static/date/Moment.js"></script>
     <script type="text/javascript" src="../static/date/bootstrap-datetimepicker.min.js"></script>
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/css/bootstrap-select.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/js/bootstrap-select.min.js"></script>
-
     <!--
-    <%--<link rel="stylesheet" href="../static/bootstrap/">--%>
-    <%--<script type="text/javascript" src="../static/bootstrap/bootstrap-select-1.12.4/js/bootstrap-select.js"></script>--%>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/css/bootstrap-select.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.4/js/bootstrap-select.min.js"></scrip
 
-    <%--<script type="text/javascript" src="../static/bootstrap/bootstrap-select-1.12.4/js/i18n/defaults-*.min.js"></script>--%> -->
+        <%--<link rel="stylesheet" href="../static/bootstrap/">--%>
+        <%--<script type="text/javascript" src="../static/bootstrap/bootstrap-select-1.12.4/js/bootstrap-select.js"></script>--%>
+
+        <%--<script type="text/javascript" src="../static/bootstrap/bootstrap-select-1.12.4/js/i18n/defaults-*.min.js"></script>--%> -->
 
     <script>
         $(function () {
-            $.post("../ktype/query",{},function (releset) {
-                var e=releset;
+            $.post("../../CardQuery",{},function (data) {
+                window.console.log(data);
+                var e=data;
                 $(e).each(function () {
-                    $('#ktype').append('<option value='+this.typeId+' >'+this.typeName+'</option>');
+                    $('#ktype').append('<option value='+this.type_id+' >'+this.type_name+'</option>');
                 })
             });
-            $('#srdata').datetimepicker({
-                //viewMode: 'day',
-                format: 'MM-DD'
-            });
+
             $('#dg').bootstrapTable({
-                url:'../menber/query',
+                url:'../../MemberQuery',
                 method:'post',
-                contentType:"application/x-www-form-urlencoded",
+                contentType:"application/x-www-form-urlencoded;charset=utf-8",
+                // columns中的对象:title 指的是填到表头的信息，而field 指的是服务器端返回的json数据 rows:[{id:'1',name:'xxx'}]
                 columns:[
-                    { field:'memberId',title:'会员编号',sortable: true},
-                    { field:'memberName',title:'名称',sortable: true},
-                    { field:'memberPhone',title:'电话',sortable: true},
-                    { field:'membertypes.typeName',title:'卡类型'},
-                    { field:'nenberDate',title:'录入日期'},
-                    { field:'xxx',title:'会员状态',
-                        formatter:function (value,row,index) {
-                            if(row.memberStatic==1){
+                    { field:'member_id',title:'会员编号',sortable: true},
+                    { field:'member_name',title:'名称',sortable: true},
+                    { field:'member_phone',title:'电话',sortable: true},
+
+                    { field:'card_type.type_name',title:'卡类型'},
+                    { field:'login_date',title:'录入日期'},
+                    { field:'member_state',title:'会员状态',
+                        formatter:function (value,data,index) {
+                            if(data.member_state === 1){
                                 return "正常"
                             }else{
                                 return "<p style='color:red'>请续卡</p>"
                             }
                         }
                     },
-                    { field:'memberxufei',title:'到期日期'},
-                    { field:'xxx',title:'操作',
-                        formatter:function (value,row,index) {
+                    { field:'expire_date',title:'到期日期'},
+                    {
+                        field:'xx',title:'操作',
+                        formatter : function(value, data, index) {
                             return "<a title='续卡' href='javascript:xufei("
-                                + row.memberId + ")'><span class='glyphicon glyphicon-arrow-right'>续卡</span></a>";
+                                + data.member_id + ")'><span class='glyphicon glyphicon-arrow-right'>续卡</span></a>";
                         }
-                    },
+                    }
                 ],
                 queryParamsType:'',
                 queryParams:queryParams,
@@ -73,7 +73,7 @@
                 pageNumber:1,
                 pageSize:5,
                 pagination:true,
-                sidePagination:'server',
+                sidePagination:'client',
                 onDblClickRow:function(row,$element,field) {
 
                 }
@@ -83,8 +83,8 @@
         //获取当前的条件个页面页数即使更新值
         function queryParams(afds){
             var i={
-                "pageSize":afds.pageSize,
-                "pageNumber":afds.pageNumber,
+               // "pageSize":afds.pageSize,
+                // "pageNumber":afds.pageNumber,
                 "id":$('#hyid').val(),
                 "ktype":$('#ktype').val()
 
@@ -93,22 +93,33 @@
         }
         //查询
         function search(){
-            var opt=$('#dg').bootstrapTable('getOptions');
-            var hyid=$('#hyid').val();
-            var ktype=$('#ktype').val();
-            $.post("../menber/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"hyname":hyid,"ktype":ktype},function (releset) {
-                $("#dg").bootstrapTable('load',releset) ;
-            })
+            var searchData = {};
+            searchData["search_name"]=$('#hyid').val();
+            searchData["search_typeid"]=$('#ktype').val();
+
+            $.ajax(
+                {
+                    url:"../../MemberSearch",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(searchData),
+                    async:false,
+                    success:function (data)
+                    {
+                        $("#dg").bootstrapTable('load',data) ;
+                    },
+                });
         }
         function xufei(id) {
             //$('#xztype').empty();
-            $.post("../ktype/query",{},function (releset) {
+
+            $.post("../../CardQuery",{},function (releset) {
                 var e=releset;
                 var tt ="";
                 var tttt="";
                 var ttt="<option value='-1'>"+"--请选择--"+"</option>";
                 $(e).each(function () {
-                    tt += "<option value='"+this.typeId+"'>"+""+this.typeName+"</option>";
+                    tt += "<option value='"+this.type_id+"'>"+""+this.type_name+"</option>";
                     tttt=ttt+tt;
                     $('#xztype').html(tttt);
                 })
@@ -121,32 +132,27 @@
             if(!validateAdd()){
                 return;
             }
-            var id=$('#ycy').val();
-            var xztype=$('#xztype').val();
-            var jine=$('#xzmoney').val();
-            var ssmoney=$('#ssmoney').val();
-            var zhaoqian=$('#zhaoqian').val();
-            $.post("../menber/cha",{"id":id},function (releset) {
-                var memberxufei = releset.memberxufei;
-                $.post("../ktype/query2",{"xztype":xztype},function (releset) {
-                    var typetian=releset.typeDay;
-                    var date1 = new Date();
-                    var date2 = new Date(date1);
-                    var date3 = new Date(memberxufei);
-                    var date4 = new Date(memberxufei);
-                    if(date1.getTime()>= date3.getTime()){
-                        var qb=date2.setDate(date1.getDate() + typetian);
-                        var rq=date2.getFullYear() + "-" + (date2.getMonth() + 1) + "-" + date2.getDate();
-                    }else {
-                        var qb=date4.setDate(date3.getDate() + typetian);
-                        var rq=date4.getFullYear() + "-" + (date4.getMonth() + 1) + "-" + date4.getDate();
+            var member_id=$('#ycy').val();
+            var type_id=$('#xztype').val();
 
-                    }
-
-                    var bz=$('#bz').val();
-                    $.post("../menber/ins",{"beizhu":bz,"member.memberId":id,"membertype.typeId":xztype,"money":jine,"ssmoney":ssmoney,"zlmoney":zhaoqian,"daoqi":rq},function (releset) {
-                        if(releset != null){
-                            $("#dg").bootstrapTable('load',releset) ;
+            var returnData = {};
+            returnData["member_id"] = member_id;
+            returnData["type_id"] = type_id;
+            //该ajax发送到后端后干两件事
+            // 1. 根据member_id获取对应的会员卡类型的天数，并将其加到increase_day这一列中
+            // 2. 根据type_id 修改对应用户的会员卡类型
+            // 3.将结果返回给前端
+            $.ajax(
+                {
+                    url:"../../UpdateMemberCardMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        if(data != null){
+                            $("#dg").bootstrapTable('load',data) ;
                             $('#updateeModal').modal('hide');
                             swal(
                                 {
@@ -166,18 +172,18 @@
                                 }
                             )
                         }
-                    })
-                })
-            })
+
+                    },
+                });
         }
 
         function validateAdd() {
 
-            $("#xztype").parent().find("span").remove();
-            $("#ssmoney").parent().find("span").remove();
+            $("#xztype").parent().find("span").remove(); //卡的类型对应的金额
+            $("#ssmoney").parent().find("span").remove(); //实收金额
 
             var xztype = $("#xztype").val().trim();
-            if(xztype==-1){
+            if(xztype===-1){
                 $("#xztype").parent().append("<span style='color:red'>请选择会员卡型</span>");
                 return false;
             }
@@ -192,18 +198,35 @@
                 $("#ssmoney").parent().append("<span style='color:red'>实收金额只能为正整数</span>");
                 return false;
             }
-
-
+            var givemoney = $("#zhaoqian").val().trim();
+            if(givemoney < 0)
+            {
+                $("#zhaoqian").parent().append("<span style='color:red'>请确保实收金额大于应收金额</span>");
+                return  false;
+            }
 
             return true;
         }
 
+        //根据会员卡类型确定对应金额
         function sss() {
-            var xztype=$('#xztype').val();
-            if(xztype!=0){
-                $.post("../ktype/query2",{xztype:xztype},function (releset) {
-                    $('#xzmoney').val(releset.typemoney);
-                });
+
+            var returnData = {};
+            returnData["type_id"]=$('#xztype').val();
+            if(returnData["type_id"]!==0){
+                $.ajax(
+                    {
+                        url:"../../QueryCardMoney",
+                        type:"POST",
+                        dataType:"JSON",
+                        data: JSON.stringify(returnData),
+                        async:false,
+                        success:function (data)
+                        {
+                            $('#xzmoney').val(data.type_money);
+                        },
+                    });
+
             }
         }
         function zql() {

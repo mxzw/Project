@@ -81,13 +81,13 @@ class Member
       string login_date = v["login_date"].asString();
 
       char sql[1024]={0};
-#define AddMember_SQL "insert into MemberInfo values(null,\'%s\',\'%s\',%d,%d,%d,1,\'%s\',0);"
+#define AddMember_SQL "insert into MemberInfo values(null,\'%s\',\'%s\',%d,%d,%d,1,\'%s\',0,0);"
       snprintf(sql,sizeof(sql)-1,AddMember_SQL,member_name.c_str(),member_phone.c_str(),member_sex,member_age,member_typeid,login_date.c_str());
 
       return md_->ExecSQL(sql);
-      
+
     }
-    //查询会员卡的类型
+    //查询所有会员卡的类型
     string MemberCardQuery(ManageDB*& md_)
     {
       list<CardMessage> lcm;
@@ -119,6 +119,73 @@ class Member
 
       return xpack::json::encode(lcm);
     }
+    //搜索相关会员卡信息
+    string CardMessageSearch(ManageDB*& md_,string type_name)
+    {
+      list<CardMessage> lcm;
+      lcm.clear();
+      char sql[1024]={0};
+#define CardMessageSearch_SQL "select * from MemberCardType where type_name like \'%s%%\';"
+      snprintf(sql,sizeof(sql)-1,CardMessageSearch_SQL,type_name.c_str());
+      MYSQL_RES* res;
+      if(!md_->ExecSQL(sql,res))
+      {
+        cout << "ExecSQL failed : MemberCardQuery, sql is " << sql << endl;
+        mysql_free_result(res);
+        return "";
+      }
+
+      MYSQL_ROW row;
+      while((row = mysql_fetch_row(res))!=NULL)
+      {
+        int type_id = atoi(row[0]);
+        string type_name = row[1];
+        int type_day = atoi(row[2]);
+        int type_money = atoi(row[3]);
+
+        CardMessage cm(type_id,type_name,type_day,type_money);
+        lcm.push_back(cm);
+      }
+
+      mysql_free_result(res);
+
+      return xpack::json::encode(lcm);
+    }
+    // 修改会员卡表中的信息
+    bool UpdateCardMessage(ManageDB*& md_,Json::Value& v)
+    {
+      int type_id = stoi(v["type_id"].asString());
+      string type_name = v["type_name"].asString();
+      int type_day = stoi(v["type_day"].asString());
+      int type_money = stoi(v["type_money"].asString());
+      char sql[1024]={0};
+#define UpdateCardMessage_SQL "update MemberCardType set type_name =\'%s\',type_day=%d,type_money=%d where type_id=%d;"
+      snprintf(sql,sizeof(sql)-1,UpdateCardMessage_SQL,type_name.c_str(),type_day,type_money,type_id);
+      return md_->ExecSQL(sql);
+    }
+    //新增一个会员卡
+    bool AddCardMessage(ManageDB*& md_,Json::Value& v)
+    {
+      string type_name = v["type_name"].asString();
+      int type_day = stoi(v["type_day"].asString());
+      int type_money = stoi(v["type_money"].asString());
+      char sql[1024]={0};
+#define AddCardMessage_SQL "insert into MemberCardType values(null,\'%s\',%d,%d);"
+      snprintf(sql,sizeof(sql)-1,AddCardMessage_SQL,type_name.c_str(),type_day,type_money);
+      return md_->ExecSQL(sql);
+    }
+    //删除一个会员卡
+    bool DelCardMessage(ManageDB*& md_,Json::Value& v)
+    {
+      int type_id = stoi(v["type_id"].asString());
+      char sql[1024]={0};
+#define DelCardMessage_SQL "delete from MemberCardType where type_id=%d;"
+      snprintf(sql,sizeof(sql)-1,DelCardMessage_SQL,type_id);
+      return md_->ExecSQL(sql);
+
+    }
+    
+
     //搜素相关用户信息
     string MemberMessageSearch(ManageDB*& md_,Json::Value& v)
     {
@@ -127,12 +194,12 @@ class Member
       lum.clear();
       //统计用户信息的个数
       int countNum = 0;
-      
+
       string search_name = v["search_name"].asString();
       int search_typeid = stoi(v["search_typeid"].asString());
 
       char sql[1024]={0};
-#define MemberSearch_SQL "select member_id,member_name,member_phone,member_sex,member_age,member_typeid,login_date,member_state from MemberInfo where member_name like \'%%%s%%\' or member_typeid = %d;"
+#define MemberSearch_SQL "select member_id,member_name,member_phone,member_sex,member_age,member_typeid,login_date,member_state,increase_day from MemberInfo where member_name like \'%%%s%%\' or member_typeid = %d;"
       snprintf(sql,sizeof(sql)-1,MemberSearch_SQL,search_name.c_str(),search_typeid);
       MYSQL_RES* res;
       if(!md_->ExecSQL(sql,res))
@@ -155,6 +222,7 @@ class Member
         int member_typeid = atoi(row[5]);
         string login_date(row[6]);
         int member_state = atoi(row[7]);
+        int increase_day = atoi(row[8]);
 
         int cardId = member_typeid;
         //查询该用户所持有会员卡的所有信息
@@ -169,7 +237,7 @@ class Member
         //加上yay-mm-dd 中的0 ，比如2021-2-1 --> 2021-02-01,目的在于统一时间的显示
         login_date = date.ToString();
 
-        date += cardTime;
+        date += cardTime + increase_day;
 
         //用于存储过期时间
         string expire_date = date.ToString();
@@ -203,7 +271,7 @@ class Member
       return str;
 
     }
-    
+
     //查询用户信息 --->返回组织好的json数据
     string MemberMessageQuery(ManageDB*& md_)
     {
@@ -214,7 +282,7 @@ class Member
       int countNum = 0;
 
       char sql[1024]={0};
-#define MemberQuery_SQL "select member_id,member_name,member_phone,member_sex,member_age,member_typeid,login_date,member_state from MemberInfo;"
+#define MemberQuery_SQL "select member_id,member_name,member_phone,member_sex,member_age,member_typeid,login_date,member_state,increase_day from MemberInfo;"
       snprintf(sql,sizeof(sql)-1,MemberQuery_SQL);
       MYSQL_RES* res;
       if(!md_->ExecSQL(sql,res))
@@ -244,6 +312,7 @@ class Member
         int member_typeid = atoi(row[5]);
         string login_date(row[6]);
         int member_state = atoi(row[7]);
+        int increase_day = atoi(row[8]);
 
         int cardId = member_typeid;
         //查询该用户所持有会员卡的所有信息
@@ -258,7 +327,7 @@ class Member
         //加上yay-mm-dd 中的0 ，比如2021-2-1 --> 2021-02-01,目的在于统一时间的显示
         login_date = date.ToString();
 
-        date += cardTime;
+        date += cardTime + increase_day;
 
         //用于存储过期时间
         string expire_date = date.ToString();
@@ -340,7 +409,7 @@ class Member
       cout << "UpdateMemberMessage sql is : " << sql << endl;
 
       return md_->ExecSQL(sql);
-      
+
     }
 
     //查询会员卡类型的日期
@@ -377,6 +446,82 @@ class Member
       MYSQL_ROW row = mysql_fetch_row(res);
       mysql_free_result(res);
       return row[0];
+    }
+    //根据会员卡id查询会员卡对应的具体金额
+    string QueryCardMoney(ManageDB*& md_,Json::Value& v)
+    {
+      int type_id = stoi(v["type_id"].asString());
+      char sql[1024]={0};
+#define QueryCardMoney_SQL "select type_money from MemberCardType where type_id = %d;"
+      snprintf(sql,sizeof(sql)-1,QueryCardMoney_SQL,type_id);
+      MYSQL_RES* res;
+      if(!md_->ExecSQL(sql,res))
+      {
+        cout << "ExecSQL failed : QueryCardMoney, sql is " << sql << endl;
+        mysql_free_result(res);
+        return "";
+      }
+      MYSQL_ROW row = mysql_fetch_row(res);
+      mysql_free_result(res);
+      return row[0];
+    }
+    //根据member_id 获取对应的会员卡类型天数
+    int GetCardDay(ManageDB*& md_,int mid)
+    {
+      char sql[1024]={0};
+#define GetCardDay_SQL "select type_day from MemberCardType where type_id = (select member_typeid from MemberInfo where member_id = %d);"
+      snprintf(sql,sizeof(sql)-1,GetCardDay_SQL,mid);
+      MYSQL_RES* res;
+      if(!md_->ExecSQL(sql,res))
+      {
+        cout << "ExecSQL failed : GetCardDay, sql is " << sql << endl;
+        mysql_free_result(res);
+        return 0;
+      }
+      MYSQL_ROW row = mysql_fetch_row(res);
+      mysql_free_result(res);
+      return atoi(row[0]);
+    }
+    //根据member_id获取对应的会员卡类型的天数，并将其加到increase_day这一列中
+    bool UpdateMemberIncreaseDay(ManageDB*& md_,int mid)
+    {
+      int type_day = GetCardDay(md_,mid);
+      char sql[1024]={0};
+#define UpdateMemberIncreaseDay_SQL "update MemberInfo set increase_day = increase_day + %d where member_id = %d;"
+      snprintf(sql,sizeof(sql)-1,UpdateMemberIncreaseDay_SQL,type_day,mid);
+      return md_->ExecSQL(sql);
+    }
+    //根据type_id 修改对应用户的会员卡类型
+    bool UpdateMemberCardType(ManageDB*& md_,int mid,int tid)
+    {
+      char sql[1024]={0};
+#define UpdateMemberCardType_SQL "update MemberInfo set member_typeid = %d where member_id = %d;"
+      snprintf(sql,sizeof(sql)-1,UpdateMemberCardType_SQL,tid,mid);
+      return md_->ExecSQL(sql);
+    }
+    string IdToCardMessage(ManageDB*& md_,int tid)
+    {
+      char sql[1024]={0};
+#define IdToCardMessage_SQL "select * from MemberCardType where type_id = %d;"
+      snprintf(sql,sizeof(sql)-1,IdToCardMessage_SQL,tid);
+      MYSQL_RES* res;
+      if(!md_->ExecSQL(sql,res))
+      {
+        cout << "ExecSQL failed : MemberCardQuery, sql is " << sql << endl;
+        mysql_free_result(res);
+        return "";
+      }
+
+      MYSQL_ROW row = mysql_fetch_row(res);
+      int type_id = atoi(row[0]);
+      string type_name = row[1];
+      int type_day = atoi(row[2]);
+      int type_money = atoi(row[3]);
+
+      CardMessage cm(type_id,type_name,type_day,type_money);
+      mysql_free_result(res);
+
+      return xpack::json::encode(cm);
     }
 
 };
