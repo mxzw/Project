@@ -1,10 +1,10 @@
 
 <script src="../static/jquery-3.2.1.min.js">
-    window.onunload(alert("jin3"))
+
 </script>
 <html>
 <head>
-    <title>会员卡列表</title>
+    <title>教练列表</title>
     <link rel="stylesheet" href="../static/bootstrap/css/bootstrap.css" />
     <link rel="stylesheet" href="../static/table/bootstrap-table.min.css" />
     <script type="text/javascript" src="../static/jquery-3.2.1.min.js"></script>
@@ -21,60 +21,57 @@
     <script>
         $(function () {
             $('#table').bootstrapTable({
-                url:'../coach/query',
+                url:'../../CoachQuery',
                 method:'post',
                 contentType:"application/x-www-form-urlencoded",
                 columns:[{ checkbox:true
                 }, {
-                    field: 'coachId',
+                    field: 'coach_id',
                     title: '编号'
                 },{
-                    field: 'coachName',
+                    field: 'coach_name',
                     title: '教练名称'
                 },{
-                    field: 'coachPhone',
+                    field: 'coach_phone',
                     title: '教练电话'
                 },{
-                    field: 'coachSex',
+                    field: 'coach_sex',
                     title: '性别',
-                    formatter:function(value,row,index) {
-                        if (value == 0) {
+                    formatter:function(value,data,index) {
+                        if (value === 1) {
                             return "男";
                         }
                         return "女";
                     }
-                },{
-                    field: 'coachAddress',
-                    title: '家庭住址'
                 },
                     {
-                        field: 'coachData',
+                        field: 'coach_date',
                         title: '工作时间'
                     },
                     {
-                        field: 'coachStatic',
+                        field: 'coach_state',
                         title: '教练状态',
-                        formatter:function(value,row,index) {
-                            if (value == 0) {
+                        formatter:function(value,data,index) {
+                            if (value === 0) {
                                 return "正常";
-                            }if(value == 1){
+                            }if(value === 1){
                                 return "<p style='color:red'>休假</p>";
                             }
                             return "<p style='color:green'>离职</p>";
                         }
                     },
                     {
-                        field: 'teach',
+                        field: 'coach_educateAge',
                         title: '教龄'
                     },{
-                        field: 'coachWages',
+                        field: 'coach_salary',
                         title: '工资'
                     },
                     {
                         field:'xx',title:'操作',
-                        formatter : function(value, row, index) {
+                        formatter : function(value, data, index) {
                             return "<a title='删除' href='javascript:del1("
-                                + row.coachId + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a href='javascript:upd1("+row.coachId+")' class='glyphicon glyphicon-pencil'></a>";
+                                + data.coach_id + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a href='javascript:upd1("+data.coach_id+")' class='glyphicon glyphicon-pencil'></a>";
                         }
 
                     }
@@ -86,7 +83,7 @@
                 pageNumber:1,
                 pageSize:5,
                 pagination:true,
-                sidePagination:'server',
+                sidePagination:'client',
 
             })
         });
@@ -105,16 +102,24 @@
                     closeOnCancel: false
                 },
                 function (isConfirm) {
-                    if (isConfirm) {var opt=$('#table').bootstrapTable('getOptions');
-                        var coachid=$('#coachidid').val();
+                    if (isConfirm) {
 
-                        $.post('../coach/del',{'id':id,"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"cardname":coachid},function(data){
-                            //重新给table绑定数据
-                            $("#table").bootstrapTable("load",data) ;
-                        }) ;
+                        var returnData = {};
+                        returnData["coach_id"] = id;
+                        $.ajax(
+                            {
+                                url:"../../DelCoachMessage",
+                                type:"POST",
+                                dataType:"JSON",
+                                data: JSON.stringify(returnData),
+                                async:false,
+                                success:function (data)
+                                {
+                                    $("#table").bootstrapTable('load',data) ;
+                                },
+                            })
                         swal("删除！", "删除成功",
                             "success");
-
                     } else {
                         swal("取消！", "您已取消删除)",
                             "error");
@@ -123,22 +128,30 @@
         }
 
         //获取当前的条件个页面页数即使更新值
-        function queryParams(afds){
+        function queryParams(){
             var i={
-                "pageSize":afds.pageSize,
-                "pageNumber":afds.pageNumber,
                 "id":$('#coachidid').val(),
             };
             return i;
         }
         //查询
         function search(){
-            var opt=$('#table').bootstrapTable('getOptions');
-            var coachid=$('#coachidid').val();
+            var searchData = {};
+            searchData["coach_name"] =$('#coachidid').val();
 
-            $.post("../coach/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"coachname":coachid},function (releset) {
-                $("#table").bootstrapTable('load',releset) ;
-            })
+            $.ajax(
+                {
+                    url:"../../CoachNameSearch",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(searchData),
+                    async:false,
+                    success:function (data)
+                    {
+                        $("#table").bootstrapTable('load',data) ;
+                    },
+                })
+
         }
 
 
@@ -147,36 +160,48 @@
                 return;
             }
             //接收数据
-            var opt=$('#table').bootstrapTable('getOptions');
+            var returnData = {};
             var coachid=$('#coachidid').val();
-            var name=$("#name").val();
-            var age = $("#age").val();
-            var phone = $("#phone").val();
-            var address = $("#address").val();
-            var date= $("#date").val();
-            var sex = $('input[name="sex"]:checked').val();
-            var jl =$("#jl").val() ;
-            var xz =$('#xz').val() ;
+            returnData["coach_name"] = $("#name").val();
+            returnData["coach_age"] = $("#age").val();
+            returnData["coach_phone"] = $("#phone").val();
+            returnData["coach_date"]= $("#date").val();
+            returnData["coach_sex"] = $('input[name="sex"]:checked').val();
+            returnData["coach_educateAge"] =$("#jl").val() ;
+            returnData["coach_salary"] =$('#xz').val() ;
             $("#myModal").modal("hide") ;
-            $.post("../coach/count",{"coachName":name},function (releset) {
-                $("#table").bootstrapTable('load',releset) ;
-                if(releset<1){
-                    $.post('../coach/add',{'coachName':name,'coachPhone':phone,'coachSex':sex,'coachAge':age,'coachData':date,"teach":jl,"coachWages":xz,'coachAddress':address},function(data){
-                        $("#table").bootstrapTable("load",data) ;
-                        $.post("../coach/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"coachname":coachid},function (releset) {
-                            $("#table").bootstrapTable('load',releset) ;
-                        })
-                        swal("添加！", "添加新教练信息成功",
-                            "success");
-                    }) ;
-                }else if(releset>0){
-                    swal("失败！", "已有该教练信息，请重新输入！",
-                        "error");
-                    $.post("../coach/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"coachname":coachid},function (releset) {
-                        $("#table").bootstrapTable('load',releset) ;
-                    })
-                }
-            })
+
+            $.ajax(
+                {
+                    url:"../../AddCoachMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        if(data != null){
+                            $("#table").bootstrapTable('load',data) ;
+                            swal(
+                                {
+                                    title:"添加成功",
+                                    type:"success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }else{
+                            swal(
+                                {
+                                    title:"添加失败",
+                                    type:"warning",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }
+                    },
+                });
         }
 
         function validateAdd() {
@@ -184,7 +209,6 @@
             $("#phone").parent().find("span").remove();
             $("#age").parent().find("span").remove();
             $("#date").parent().find("span").remove();
-            $("#address").parent().find("span").remove();
             $("#jl").parent().find("span").remove();
             $("#xz").parent().find("span").remove();
 
@@ -214,12 +238,6 @@
 
             if(!(/^1(3|4|5|6|7|8|9)\d{9}$/.test(phone))){
                 $("#phone").parent().append("<span style='color:red'>手机号码格式不正确</span>");
-                return false;
-            }
-
-            var address = $("#address").val().trim();
-            if(address == null || address == ""){
-                $("#address").parent().append("<span style='color:red'>请填写家庭住址</span>");
                 return false;
             }
 
@@ -267,47 +285,78 @@
         function upd1(id){
             $("#myModal2").modal("show");
             $('#id').val(id);
-            $.post('../coach/cha',{'id':id},function(data){
-                $("#table").bootstrapTable("load",data) ;
-                $("#xgname").val(data.coachName);
-                $("#xgage").val(data.coachAge);
-                $("#xgphone").val(data.coachPhone);
-                $("#xgaddress").val(data.coachAddress);
-                $('#xgdate').val(data.coachData);
-                $('#xgstatic').val(data.coachStatic);
-                $('#xgjl').val(data.teach);
-                $('#xgxz').val(data.coachWages);
-                $('#xgsex').val(data.coachSex);
-                // $("input[name=xgsex][value="+data.coachSex+"]").attr("checked",true);
-
-            }) ;
-
+            var returnData = {};
+            returnData["coach_id"]=id;
+            $.ajax(
+                {
+                    url:"../../IdToCoachMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                       // $("#table").bootstrapTable("load",data) ;
+                        $("#xgname").val(data.coach_name);
+                        $("#xgage").val(data.coach_age);
+                        $("#xgphone").val(data.coach_phone);
+                        $('#xgdate').val(data.coach_date);
+                        $('#xgstatic').val(data.coach_state);
+                        $('#xgjl').val(data.coach_educateAge);
+                        $('#xgxz').val(data.coach_salary);
+                        $('#xgsex').val(data.coach_sex);
+                    },
+                })
         }
         function upd(){
             if(!validateUpd()){
                 return;
             }
-            var opt=$('#table').bootstrapTable('getOptions');
-            var coachid=$('#coachidid').val();
-            var id =  $('#id').val();
-            var name = $("#xgname").val();
-            var age=$("#xgage").val();
-            var phone= $("#xgphone").val();
-            var address= $("#xgaddress").val();
-            var date=$('#xgdate').val();
-            var xgstatic= $('#xgstatic').val();
-            var sex = $('#xgsex').val();
-            var jl= $('#xgjl').val();
-            var xz=  $('#xgxz').val();
+
+
+            var returnData = {};
+            returnData["coach_id"]=$('#id').val();
+            returnData["coach_name"]= $("#xgname").val();
+            returnData["coach_age"]=$("#xgage").val();
+            returnData["coach_phone"]= $("#xgphone").val();
+            returnData["coach_date"]=$('#xgdate').val();
+            returnData["coach_state"]= $('#xgstatic').val();
+            returnData["coach_sex"] = $('#xgsex').val();
+            returnData["coach_educateAge"]= $('#xgjl').val();
+            returnData["coach_salary"] = $('#xgxz').val();
             $("#myModal2").modal("hide") ;
-            $.post('../coach/upd',{'coachId':id,'coachName':name,'coachPhone':phone,'coachSex':sex,'coachAge':age,'coachData':date,"teach":jl,"coachWages":xz,'coachAddress':address,'coachStatic':xgstatic},function(data){
-                $.post("../coach/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"coachname":coachid},function (releset) {
-                    $("#table").bootstrapTable('load',releset) ;
+
+            $.ajax(
+                {
+                    url:"../../UpdateCoachMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        if(data != null){
+                            $("#table").bootstrapTable('load',data) ;
+                            swal(
+                                {
+                                    title:"修改成功",
+                                    type:"success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }else{
+                            swal(
+                                {
+                                    title:"修改失败",
+                                    type:"warning",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }
+                    },
                 })
-                $("#table").bootstrapTable("load",data) ;
-                swal("修改！", "修改成功",
-                    "success");
-            }) ;
         }
 
         function validateUpd() {
@@ -315,7 +364,6 @@
             $("#xgphone").parent().find("span").remove();
             $("#xgage").parent().find("span").remove();
             $("#xgdate").parent().find("span").remove();
-            $("#xgaddress").parent().find("span").remove();
             $("#xgjl").parent().find("span").remove();
             $("#xgxz").parent().find("span").remove();
 
@@ -348,19 +396,12 @@
                 return false;
             }
 
-            var xgaddress = $("#xgaddress").val().trim();
-            if(xgaddress == null || xgaddress == ""){
-                $("#xgaddress").parent().append("<span style='color:red'>请填写家庭住址</span>");
-                return false;
-            }
 
             var xgdate = $("#xgdate").val().trim();
             if(xgdate == null || xgdate == ""){
                 $("#xgdate").parent().append("<span style='color:red'>请选择开始上班时间</span>");
                 return false;
             }
-
-
 
             var xgjl = $("#xgjl").val().trim();
             if(xgjl == null || xgjl == ""){
@@ -441,12 +482,6 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="address" class="col-sm-4 control-label"style="margin-top: 10px">家庭住址</label>
-                        <div class="col-sm-8">
-                            <input type="text"style="margin-top: 10px" class="form-control" id="address" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
-                        </div>
-                    </div>
-                    <div class="form-group">
                         <label for="date" class="col-sm-4 control-label"style="margin-top: 10px">开始上班时间</label>
                         <div class="col-sm-8">
                             <input type="date"style="margin-top: 10px" class="form-control" id="date" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
@@ -468,11 +503,11 @@
                         <label class="col-sm-4 control-label">性别</label>
                         <div class="col-sm-8">
                             <div class="radio radio-transparent">
-                                <input type="radio" name="sex" id="one" value="1" checked>
+                                <input type="radio" name="sex" id="one" value="0" checked>
                                 <label for="one">女</label>
                             </div>
                             <div class="radio radio-transparent">
-                                <input type="radio" name="sex" id="zero" value="0">
+                                <input type="radio" name="sex" id="zero" value="1">
                                 <label for="zero">男</label>
                             </div>
                         </div>&nbsp;
@@ -520,12 +555,6 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="address" class="col-sm-4 control-label"style="margin-top: 10px">家庭住址</label>
-                        <div class="col-sm-8">
-                            <input type="text"style="margin-top: 10px" class="form-control" id="xgaddress" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
-                        </div>
-                    </div>
-                    <div class="form-group">
                         <label for="date" class="col-sm-4 control-label"style="margin-top: 10px">开始上班时间</label>
                         <div class="col-sm-8">
                             <input type="date"style="margin-top: 10px" class="form-control" id="xgdate" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
@@ -557,8 +586,8 @@
                         <label class="col-sm-4 control-label"style="margin-top: 10px">性别</label>
                         <div class="col-sm-8">
                             <select id="xgsex" style="margin-top: 10px" class="form-control">
-                                <option value="0">男</option>
-                                <option value="1">女</option>
+                                <option value="1">男</option>
+                                <option value="0">女</option>
                             </select>
                         </div>
                     </div>

@@ -21,18 +21,18 @@
   <script>
     $(function () {
       $('#table').bootstrapTable({
-        url:'../subject/query',
+        url:'../../CourseQuery',
         method:'post',
         contentType:"application/x-www-form-urlencoded",
         columns:[
-          { field:'subId',title:'课程编号',sortable: true},
-          { field:'subname',title:'课程名称',sortable: true},
-          { field:'sellingPrice',title:'课程售价',sortable: true},
+          { field:'course_id',title:'课程编号',sortable: true},
+          { field:'course_name',title:'课程名称',sortable: true},
+          { field:'course_price',title:'课程售价',sortable: true},
           {
             field:'xx',title:'操作',
-            formatter : function(value, row, index) {
+            formatter : function(value, data, index) {
               return "<a title='删除' href='javascript:del1("
-                      + row.subId + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a href='javascript:upd1("+row.subId+")' class='glyphicon glyphicon-pencil'></a>";
+                      + data.course_id + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a href='javascript:upd1("+data.course_id+")' class='glyphicon glyphicon-pencil'></a>";
             }
 
           }
@@ -44,7 +44,7 @@
         pageNumber:1,
         pageSize:5,
         pagination:true,
-        sidePagination:'server',
+        sidePagination:'client',
 
       })
     });
@@ -82,23 +82,32 @@
     }
 
     //获取当前的条件个页面页数即使更新值
-    function queryParams(afds){
+    function queryParams(){
       var i={
-        "pageSize":afds.pageSize,
-        "pageNumber":afds.pageNumber,
         "id":$('#cardid').val(),
       };
       return i;
     }
+
     //查询
     function search(){
-      var opt=$('#table').bootstrapTable('getOptions');
-      var subjectid=$('#cardid').val();
+      var searchData = {};
+      searchData["course_name"] =$('#cardid').val();
 
-      $.post("../subject/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"subname":subjectid},function (releset) {
-        $("#table").bootstrapTable('load',releset) ;
-      })
+      $.ajax(
+              {
+                url:"../../CourseNameSearch",
+                type:"POST",
+                dataType:"JSON",
+                data: JSON.stringify(searchData),
+                async:false,
+                success:function (data)
+                {
+                  $("#table").bootstrapTable('load',data) ;
+                },
+              })
     }
+
 
     function save(){
       if(!validateAdd()){

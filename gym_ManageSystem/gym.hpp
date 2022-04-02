@@ -8,6 +8,8 @@
 #include "ManageDB.hpp"
 #include "Session.hpp"
 #include "Member.hpp"
+#include "Coach.hpp"
+#include "Course.hpp"
 
 using namespace std;
 using namespace httplib;
@@ -16,7 +18,7 @@ using namespace httplib;
 class GymManageSystem
 {
   public:
-    GymManageSystem():md_(nullptr),all_sess_(nullptr),mb_(nullptr)
+    GymManageSystem():md_(nullptr),all_sess_(nullptr),mb_(nullptr),ch_(nullptr),cs_(nullptr)
     {
     }
     ~GymManageSystem()
@@ -27,6 +29,10 @@ class GymManageSystem
         delete all_sess_;
       if(mb_)
         delete mb_;
+      if(ch_)
+        delete ch_;
+      if(cs_)
+        delete cs_;
     }
 
     /*
@@ -52,6 +58,14 @@ class GymManageSystem
 
       mb_ = new Member(); 
       if(mb_ == nullptr)
+        return -1;
+
+      ch_ = new Coach();
+      if(ch_ == nullptr)
+        return -1;
+
+      cs_ = new Course();
+      if(cs_ == nullptr)
         return -1;
 
 
@@ -309,8 +323,113 @@ class GymManageSystem
 
         });
 
-     
+    //查询所有教练信息
+    http_svr_.Post("/CoachQuery",[=](const Request& req, Response& res)
+        {
+          res.body = this->ch_->CoachMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
 
+    //根据教练名称模糊搜索教练信息
+    http_svr_.Post("/CoachNameSearch",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          string coach_name = req_value["coach_name"].asString();
+          string str = "";
+          int flag = 30;
+          //防止请求过多造成程序崩溃，导致系统不响应
+          while(str.compare("")==0 && flag)
+          {
+              str = this->ch_->CoachMessageSearch(md_,coach_name);
+              flag--;
+          }
+          res.body = str;
+          res.set_header("content-Type","application/json;charset=UTF-8");
+          
+        });
+    //新增一个教练信息
+    http_svr_.Post("/AddCoachMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->ch_->AddCoachMessage(md_,req_value))
+            cout << "AddCoachMessage failed ! " << endl;
+          else 
+            res.body = this->ch_->CoachMessageQuery(md_);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //根据教练id查询相应教练信息
+    http_svr_.Post("/IdToCoachMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          int coach_id = stoi(req_value["coach_id"].asString());
+          res.body = this->ch_->IdToCoachMessage(md_,coach_id);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+
+        });
+    //修改教练信息
+    http_svr_.Post("/UpdateCoachMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->ch_->UpdateCoachMessage(md_,req_value))
+            cout << "UpdateCoachMessage failed ! " << endl;
+          else 
+            res.body = this->ch_->CoachMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+          });
+    //删除教练信息
+    http_svr_.Post("/DelCoachMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->ch_->DelCoachMessage(md_,req_value))
+            cout << "DelCoachMessage failed ! " << endl;
+          else 
+            res.body = this->ch_->CoachMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+
+        });
+    //查询所有课程信息
+    http_svr_.Post("/CourseQuery",[=](const Request& req, Response& res)
+        {
+          res.body = this->cs_->CourseMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+   
+    //根据教练名称模糊搜索教练信息
+    http_svr_.Post("/CourseNameSearch",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          string course_name = req_value["course_name"].asString();
+          string str = "";
+          int flag = 30;
+          //防止请求过多造成程序崩溃，导致系统不响应
+          while(str.compare("") == 0 && flag)
+          {
+              str = this->cs_->CourseMessageSearch(md_,course_name);
+              flag--;
+          }
+          res.body = str;
+          res.set_header("content-Type","application/json;charset=UTF-8");
+          
+        });
+
+
+    
       //绑定地址
       http_svr_.set_mount_point("/","./www");
       http_svr_.listen("0.0.0.0",18989);
@@ -336,5 +455,7 @@ class GymManageSystem
     ManageDB* md_;
     AllInfoUserSession* all_sess_;
     Member* mb_;
+    Coach* ch_;
+    Course* cs_;
 
 };
