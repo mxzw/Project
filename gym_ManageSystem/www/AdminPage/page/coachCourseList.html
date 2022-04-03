@@ -1,10 +1,10 @@
 
 <script src="../static/jquery-3.2.1.min.js">
-    window.onunload(alert("jin3"))
+
 </script>
 <html>
 <head>
-    <title>会员卡列表</title>
+    <title>教练课程列表</title>
     <link rel="stylesheet" href="../static/bootstrap/css/bootstrap.css" />
     <link rel="stylesheet" href="../static/table/bootstrap-table.min.css" />
     <script type="text/javascript" src="../static/jquery-3.2.1.min.js"></script>
@@ -29,51 +29,38 @@
                     $('#zje').val(e.sellingPrice*s);
                 })
             })
-            /*$('#sl').change(function () {
-            var sl = $('#sl').val();
-            var dj = $('#dj').val();
-            var s = sl * dj;
-            $('#zje').val(s);
-        })
-            $('#ssq').change(function () {
-                var ssq = $('#ssq').val();
-                var zje = $('#zje').val();
-                var s = ssq-zje;
-                $('#zl').val(s);
-            })*/
             $('#table').bootstrapTable({
-                url:'../privateinfo/query',
+                url:'../../CoachCourseQuery',
                 method:'post',
                 contentType:"application/x-www-form-urlencoded",
 
                 columns:[{
-                    field: 'pid',
+                    field: 'p_id',
                     title: '编号'
                 },
                     {
-                        field: 'member.memberName',
+                        field: 'um.member_name',
                         title: '会员名称'
                     },
                     {
-                        field: 'coach.coachName',
+                        field: 'ch.coach_name',
                         title: '教练名称'
                     },{
-                        field: 'subject.subname',
+                        field: 'cs.course_name',
                         title: '课程名称'
                     },
                     {
-                        field: 'count',
-                        title: '数量',
+                        field: 'purchase_num',
+                        title: '课程数量',
 
                     },
                     {
                         field:'xx',title:'操作',
-                        formatter : function(value, row, index) {
+                        formatter : function(value, data, index) {
                             return "<a title='删除' href='javascript:del1("
-                                + row.pid + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a href='javascript:upd(" + row.pid + ")' class='glyphicon glyphicon-pencil'></a>";
+                                + data.pid + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a href='javascript:upd(" + data.pid + ")' class='glyphicon glyphicon-pencil'></a>";
 
                         }
-
                     }
                 ],
                 queryParamsType:'',
@@ -83,44 +70,44 @@
                 pageNumber:1,
                 pageSize:5,
                 pagination:true,
-                sidePagination:'server',
+                sidePagination:'client',
                 detailView:true,
-                onExpandRow:function(index, row, $detail){
+                onExpandRow:function(index, data, $detail){
                     var aa=$detail.html("<table></table>").find('table');
-                    var idd=row.pid;
+                    var idd=data.pid;
                     aa.bootstrapTable({
                         url:'../privateinfo/query2?pid='+idd+'',
                         columns:[{
-                            field:'pid',
+                            field:'p_id',
                             title:'编号',
                         },
                             {
-                                field: 'member.memberName',
+                                field: 'member.member_name',
                                 title: '会员名称'
                             },
                             {
-                                field: 'count',
+                                field: 'purchase_num',
                                 title: '数量'
                             },{
-                                field: 'state',
+                                field: 'purchase_state',
                                 title: '状态',
-                                formatter:function (value,row,index) {
-                                    if(row.state==1){
+                                formatter:function (value,data,index) {
+                                    if(data.state===1){
                                         return "购买";
                                     }else{
                                         return "赠送";
                                     }
                                 }
                             },{
-                                field:'countprice',
+                                field:'purchase_money',
                                 title:'金额',
                             },
                             {
-                                field: 'remark',
+                                field: 'purchase_note',
                                 title: '备注',
 
                             },{
-                                field:'date',
+                                field:'purchase_date',
                                 title:'开始日期',
                             }
                         ]

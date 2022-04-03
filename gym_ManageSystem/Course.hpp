@@ -17,6 +17,12 @@ struct CourseMessage
   CourseMessage(int cid=0,string cname="",double cmoney=0)
     :course_id(cid),course_name(cname),course_price(cmoney)
   {}
+  CourseMessage(const CourseMessage& cm)
+  {
+    course_id = cm.course_id;
+    course_name = cm.course_name;
+    course_price = cm.course_price;
+  }
   int course_id;
   string course_name;
   double course_price;
@@ -70,6 +76,26 @@ class Course{
       str = prev + str + "}";  
       return str;
     }
+    void QueryAllCourseMessage(ManageDB*& md_,int cid,struct CourseMessage& cs)
+    {
+      char sql[1024]={0};                     
+#define QueryAllCourseMessage_SQL "select * from CourseInfo where course_id=%d;"
+      snprintf(sql,sizeof(sql)-1,QueryAllCourseMessage_SQL,cid);
+      MYSQL_RES* res;                                                  
+      if(!md_->ExecSQL(sql,res))          
+      {                                              
+        cout << "ExecSQL failed : CourseMessageQuery, sql is " << sql << endl;
+        mysql_free_result(res);                                                             
+        return ;                                  
+      }                                
+      MYSQL_ROW row = mysql_fetch_row(res);
+      int course_id = atoi(row[0]);                                                                                          
+      string course_name(row[1]);
+      double course_price = stod(string(row[2]));
+
+      cs = CourseMessage(course_id,course_name,course_price);
+      mysql_free_result(res);
+    }
 
     //根据课程名来模糊搜索课程信息
     string CourseMessageSearch(ManageDB*& md_,string course_name)
@@ -114,7 +140,64 @@ class Course{
       return str;
     }
 
+    //新增课程信息
+    bool AddCourseMessage(ManageDB*& md_,Json::Value& v)    
+    {    
+      string course_name = v["course_name"].asString();                         
+      double course_price = stod(v["course_price"].asString());    
 
+      char sql[1024]={0};         
+#define AddCourseMessage_SQL "insert into CourseInfo values(null,\'%s\',%lf);"
+      snprintf(sql,sizeof(sql)-1,AddCourseMessage_SQL,course_name.c_str(),course_price);    
 
+      return md_->ExecSQL(sql);     
+    } 
+    // 根据课程id查询课程信息
+    string IdToCourseMessage(ManageDB*& md_,int tid)
+    {
+      char sql[1024]={0};
+#define IdToCourseMessage_SQL "select * from CourseInfo where course_id = %d;"
+      snprintf(sql,sizeof(sql)-1,IdToCourseMessage_SQL,tid);
+      MYSQL_RES* res;
+      if(!md_->ExecSQL(sql,res))
+      {
+        cout << "ExecSQL failed : MemberCoachQuery, sql is " << sql << endl;
+        mysql_free_result(res);
+        return "";
+      }
+      MYSQL_ROW row = mysql_fetch_row(res);
+      int course_id = atoi(row[0]);                                                                                          
+      string course_name(row[1]);
+      double course_price = stod(string(row[2]));
+
+      CourseMessage cm(course_id,course_name,course_price);
+      mysql_free_result(res);
+
+      //转成json
+      string str = xpack::json::encode(cm);
+      return str;
+    }
+    //修改教练信息
+    bool UpdateCourseMessage(ManageDB*& md_,Json::Value& v)
+    {
+      int course_id = stoi(v["course_id"].asString());
+      string course_name = v["course_name"].asString();                         
+      double course_price = stod(v["course_price"].asString());
+
+      char sql[1024]={0};
+#define UpdateCourseMessage_SQL "update CourseInfo set course_name =\'%s\',course_price=%lf where course_id=%d;"
+      snprintf(sql,sizeof(sql)-1,UpdateCourseMessage_SQL,course_name.c_str(),course_price,course_id);
+      return md_->ExecSQL(sql);
+    }
+
+    //删除教练信息
+    bool DelCourseMessage(ManageDB*& md_,Json::Value& v)
+    {
+      int course_id = stoi(v["course_id"].asString());
+      char sql[1024]={0};
+#define DelCourseMessage_SQL "delete from CourseInfo where course_id=%d;"
+      snprintf(sql,sizeof(sql)-1,DelCourseMessage_SQL,course_id);
+      return md_->ExecSQL(sql);
+    }
 
 };

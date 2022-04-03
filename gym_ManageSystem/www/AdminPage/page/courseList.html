@@ -64,13 +64,21 @@
               },
               function (isConfirm) {
                 if (isConfirm) {
-                  var opt=$('#table').bootstrapTable('getOptions');
-                  var subjectid=$('#cardid').val();
 
-                  $.post('../subject/del',{'subId':id,"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"subname":subjectid},function(data){
-                    //重新给table绑定数据
-                    $("#table").bootstrapTable("load",data) ;
-                  }) ;
+                  var returnData = {};
+                  returnData["course_id"] = id;
+                  $.ajax(
+                          {
+                            url:"../../DelCourseMessage",
+                            type:"POST",
+                            dataType:"JSON",
+                            data: JSON.stringify(returnData),
+                            async:false,
+                            success:function (data)
+                            {
+                              $("#table").bootstrapTable('load',data) ;
+                            },
+                          })
                   swal("删除！", "删除成功",
                           "success");
 
@@ -114,30 +122,42 @@
         return;
       }
       //接收数据
-      var opt=$('#table').bootstrapTable('getOptions');
-      var subjectid=$('#cardid').val();
-      var name=$("#name").val();
-      var money = $("#money").val();
+      var returnData = {};
+      returnData["course_name"] = $("#name").val();
+      returnData["course_price"] = $("#money").val();
       $("#myModal").modal("hide") ;
-      $.post("../subject/count",{"subname":name},function (releset) {
-        $("#table").bootstrapTable('load',releset) ;
-        if(releset<1){
-          $.post('../subject/add',{'subname':name,'sellingPrice':money},function(data){
-            $("#table").bootstrapTable("load",data) ;
-            $.post("../subject/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"subname":subjectid},function (releset) {
-              $("#table").bootstrapTable('load',releset) ;
-            })
-            swal("添加！", "添加成功",
-                    "success");
-          }) ;
-        }else if(releset>0){
-          swal("失败！", "已有该课程，请重新输入！",
-                  "error");
-          $.post("../subject/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"subname":subjectid},function (releset) {
-            $("#table").bootstrapTable('load',releset) ;
-          })
-        }
-      })
+
+      $.ajax(
+              {
+                url:"../../AddCourseMessage",
+                type:"POST",
+                dataType:"JSON",
+                data: JSON.stringify(returnData),
+                async:false,
+                success:function (data)
+                {
+                  if(data != null){
+                    $("#table").bootstrapTable('load',data) ;
+                    swal(
+                            {
+                              title:"添加成功",
+                              type:"success",
+                              timer: 1500,
+                              showConfirmButton: false
+                            }
+                    )
+                  }else{
+                    swal(
+                            {
+                              title:"添加失败",
+                              type:"warning",
+                              timer: 1500,
+                              showConfirmButton: false
+                            }
+                    )
+                  }
+                },
+              });
     }
 
     function validateAdd() {
@@ -169,12 +189,23 @@
     function upd1(id){
       $("#myModal2").modal("show");
       $('#id').val(id);
-      $.post('../subject/cha',{'subId':id},function(data){
-        $("#table").bootstrapTable("load",data) ;
-        $("#xgname").val(data.subname);
-        $("#xgmoney").val(data.sellingPrice);
-      }) ;
+      var returnData = {};
+      returnData["course_id"]=id;
 
+      $.ajax(
+              {
+                url:"../../IdToCourseMessage",
+                type:"POST",
+                dataType:"JSON",
+                data: JSON.stringify(returnData),
+                async:false,
+                success:function (data)
+                {
+                  // $("#table").bootstrapTable("load",data) ;
+                  $("#xgname").val(data.course_name);
+                  $("#xgmoney").val(data.course_price);
+                },
+              })
     }
     function kong() {
 
@@ -185,20 +216,43 @@
       if(!validateUpd()){
         return;
       }
-      var opt=$('#table').bootstrapTable('getOptions');
-      var subjectid=$('#cardid').val();
-      var id =  $('#id').val();
-      var name = $("#xgname").val();
-      var money= $("#xgmoney").val();
+      var returnData = {};
+      returnData["course_id"] =  $('#id').val();
+      returnData["course_name"] = $("#xgname").val();
+      returnData["course_price"]= $("#xgmoney").val();
       $("#myModal2").modal("hide") ;
-      $.post('../subject/upd',{'subId':id,'subname':name,'sellingPrice':money},function(data){
-        $.post("../subject/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"subname":subjectid},function (releset) {
-          $("#table").bootstrapTable('load',releset) ;
-        })
-        $("#table").bootstrapTable("load",data) ;
-        swal("修改！", "修改成功",
-                "success");
-      }) ;
+
+      $.ajax(
+              {
+                url:"../../UpdateCourseMessage",
+                type:"POST",
+                dataType:"JSON",
+                data: JSON.stringify(returnData),
+                async:false,
+                success:function (data)
+                {
+                  if(data != null){
+                    $("#table").bootstrapTable('load',data) ;
+                    swal(
+                            {
+                              title:"修改成功",
+                              type:"success",
+                              timer: 1500,
+                              showConfirmButton: false
+                            }
+                    )
+                  }else{
+                    swal(
+                            {
+                              title:"修改失败",
+                              type:"warning",
+                              timer: 1500,
+                              showConfirmButton: false
+                            }
+                    )
+                  }
+                },
+              });
     }
 
     function validateUpd() {

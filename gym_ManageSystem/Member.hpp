@@ -40,6 +40,19 @@ struct UserMessage
     :member_id(mid),member_name(mname),member_phone(mphone),member_sex(msex), member_age(mage),    
     card_type(ctype),login_date(ldate),member_state(mstate),expire_date(edate)    
   {}                                                                                                  
+  UserMessage(){}
+  UserMessage(const UserMessage& um)
+  {
+    member_id = um.member_id;
+    member_name = um.member_name;
+    member_phone = um.member_phone;
+    member_sex = um.member_sex;
+    member_age = um.member_age;
+    card_type = um.card_type;
+    login_date = um.login_date;
+    member_state = um.member_state;
+    expire_date = um.expire_date;
+  }
 
   int member_id;                                                                                      
   string member_name;                 
@@ -184,7 +197,7 @@ class Member
       return md_->ExecSQL(sql);
 
     }
-    
+
 
     //搜素相关用户信息
     string MemberMessageSearch(ManageDB*& md_,Json::Value& v)
@@ -364,8 +377,76 @@ class Member
       return str;
 
     }
+    //根据id查询所有的会员信息
+    void QueryAllMemberMessage(ManageDB*& md_,int mid,struct UserMessage& um)
+    {
+      char sql[1024]={0};
+#define QueryAllMemberMessage_SQL "select member_name,member_phone,member_sex,member_age,member_typeid,login_date,member_state,increase_day from MemberInfo where member_id = %d;"
+      snprintf(sql,sizeof(sql)-1,QueryAllMemberMessage_SQL,mid);
+      MYSQL_RES* res;
+      if(!md_->ExecSQL(sql,res))
+      {
+        cout << "ExecSQL failed : MemberQuery, sql is " << sql << endl;
+        mysql_free_result(res);
+        return;
+      }
+      MYSQL_ROW row = mysql_fetch_row(res);
+      // member_id,member_name,member_phone,member_sex,member_age,member_typeid,login_date,member_state 
+      string member_name(row[0]);
+      string member_phone(row[1]);
+      int member_sex = atoi(row[2]);
+      int member_age = atoi(row[3]);
+      int member_typeid = atoi(row[4]);
+      string login_date(row[5]);
+      int member_state = atoi(row[6]);
+      int increase_day = atoi(row[7]);
 
-    void QueryAllCardMessage(ManageDB* md_,int mid,struct CardMessage& cm)
+      int cardId = member_typeid;
+      //查询该用户所持有会员卡的所有信息
+      struct CardMessage card_type;
+      QueryAllCardMessage(md_,cardId,card_type);
+      //组织查询会员卡的类型的时间，用于计算到期时间
+      int cardTime = card_type.type_day;
+
+      //将登录时间初始化为Data格式
+      string tmp(login_date);
+      Date date(tmp);
+      //加上yay-mm-dd 中的0 ，比如2021-2-1 --> 2021-02-01,目的在于统一时间的显示
+      login_date = date.ToString();
+
+      date += cardTime + increase_day;
+
+      //用于存储过期时间
+      string expire_date = date.ToString();
+
+
+      //若过期时间 < 当前时间，说明当前会员卡已经过期，需要续卡
+      if(expire_date < Date::GetNowDate())
+      {
+        //修改Member表中的member_state
+        member_state = -1;
+        if(!UpdateMenberState(md_,member_state,mid))
+        {
+          cout << "UpdateMenberState faild " << endl;
+          mysql_free_result(res);
+          return ;
+        }
+      }
+      //用来存储从数据库中读出的用户的信息
+      um.member_id = mid;
+      um.member_name = member_name;
+      um.member_phone = member_phone;
+      um.member_sex = member_sex;
+      um.member_age = member_age;
+      um.card_type = card_type;
+      um.login_date = login_date;
+      um.member_state = member_state;
+      um.expire_date = expire_date;
+      //统计数据的个数
+      mysql_free_result(res);
+    }
+
+    void QueryAllCardMessage(ManageDB*& md_,int mid,struct CardMessage& cm)
     {
       char sql[1024]={0};
 #define QueryAllCardMessage_SQL "select * from MemberCardType where type_id = %d;"

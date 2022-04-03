@@ -7,9 +7,13 @@
 #include "httplib.h"
 #include "ManageDB.hpp"
 #include "Session.hpp"
-#include "Member.hpp"
-#include "Coach.hpp"
-#include "Course.hpp"
+
+//这三个类在CoachCourse中包含了
+//#include "Member.hpp"
+//#include "Coach.hpp"
+//#include "Course.hpp"
+#include "Equipment.hpp"
+#include "CoachCourse.hpp"
 
 using namespace std;
 using namespace httplib;
@@ -18,7 +22,7 @@ using namespace httplib;
 class GymManageSystem
 {
   public:
-    GymManageSystem():md_(nullptr),all_sess_(nullptr),mb_(nullptr),ch_(nullptr),cs_(nullptr)
+    GymManageSystem():md_(nullptr),all_sess_(nullptr),mb_(nullptr),ch_(nullptr),cs_(nullptr),eq_(nullptr),cc_(nullptr)
     {
     }
     ~GymManageSystem()
@@ -33,6 +37,10 @@ class GymManageSystem
         delete ch_;
       if(cs_)
         delete cs_;
+      if(eq_)
+        delete eq_;
+      if(cc_)
+        delete cc_;
     }
 
     /*
@@ -68,6 +76,12 @@ class GymManageSystem
       if(cs_ == nullptr)
         return -1;
 
+      eq_ = new Equipment();
+      if(eq_ == nullptr)
+        return -1;
+      cc_ = new CoachCourse(mb_,ch_,cs_);
+      if(cc_ == nullptr)
+        return -1;
 
       return 0;
     }
@@ -407,7 +421,7 @@ class GymManageSystem
           res.set_header("content-Type","application/json;charset=UTF-8");
         });
    
-    //根据教练名称模糊搜索教练信息
+    //根据课程名称模糊搜索课程信息
     http_svr_.Post("/CourseNameSearch",[=](const Request& req,Response& res)
         {
           Json::Reader r;
@@ -427,8 +441,137 @@ class GymManageSystem
           res.set_header("content-Type","application/json;charset=UTF-8");
           
         });
+    //新增一个课程信息
+    http_svr_.Post("/AddCourseMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->cs_->AddCourseMessage(md_,req_value))
+            cout << "AddCourseMessage failed ! " << endl;
+          else 
+            res.body = this->cs_->CourseMessageQuery(md_);
 
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //根据课程id查询相应课程信息
+    http_svr_.Post("/IdToCourseMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          int course_id = stoi(req_value["course_id"].asString());
+          res.body = this->cs_->IdToCourseMessage(md_,course_id);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //修改课程信息
+    http_svr_.Post("/UpdateCourseMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->cs_->UpdateCourseMessage(md_,req_value))
+            cout << "UpdateCourseMessage failed ! " << endl;
+          else 
+            res.body = this->cs_->CourseMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+          });
+    //删除课程信息
+    http_svr_.Post("/DelCourseMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->cs_->DelCourseMessage(md_,req_value))
+            cout << "DelCourseMessage failed ! " << endl;
+          else 
+            res.body = this->cs_->CourseMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
 
+        });
+        //查询所有器材信息
+    http_svr_.Post("/EquipmentQuery",[=](const Request& req, Response& res)
+        {
+          res.body = this->eq_->EquipmentMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+   
+    //根据器材名称模糊搜索器材信息
+    http_svr_.Post("/EquipmentNameSearch",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          string Equipment_name = req_value["eq_name"].asString();
+          string str = "";
+          int flag = 30;
+          //防止请求过多造成程序崩溃，导致系统不响应
+          while(str.compare("") == 0 && flag)
+          {
+              str = this->eq_->EquipmentMessageSearch(md_,Equipment_name);
+              flag--;
+          }
+          res.body = str;
+          res.set_header("content-Type","application/json;charset=UTF-8");
+          
+        });
+    //新增一个器材信息
+    http_svr_.Post("/AddEquipmentMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->eq_->AddEquipmentMessage(md_,req_value))
+            cout << "AddEquipmentMessage failed ! " << endl;
+          else 
+            res.body = this->eq_->EquipmentMessageQuery(md_);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //根据器材id查询相应器材信息
+    http_svr_.Post("/IdToEquipmentMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          int Equipment_id = stoi(req_value["eq_id"].asString());
+          res.body = this->eq_->IdToEquipmentMessage(md_,Equipment_id);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //修改器材信息
+    http_svr_.Post("/UpdateEquipmentMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->eq_->UpdateEquipmentMessage(md_,req_value))
+            cout << "UpdateEquipmentMessage failed ! " << endl;
+          else 
+            res.body = this->eq_->EquipmentMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+          });
+    //删除器材信息
+    http_svr_.Post("/DelEquipmentMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->eq_->DelEquipmentMessage(md_,req_value))
+            cout << "DelEquipmentMessage failed ! " << endl;
+          else 
+            res.body = this->eq_->EquipmentMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+
+        });
+    //将所有的教练课程信息返回给前端
+    http_svr_.Post("/CoachCourseQuery",[=](const Request& req,Response& res)
+        {
+          res.body = this->cc_->CoachCourseMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
     
       //绑定地址
       http_svr_.set_mount_point("/","./www");
@@ -437,11 +580,9 @@ class GymManageSystem
     //用于一些测试
     void test()
     {
-      //Json::Value res_value;
-      string v = this->mb_->MemberMessageQuery(md_);
-      Json::FastWriter fw;
-      
-      cout <<  "MemberMessageQueryber is " << v << endl;
+      cc_->test(md_);
+      cout << endl;
+      cout << cc_->CoachCourseMessageQuery(md_) << endl;
     }
 
     string Serializa(Json::Value &v)
@@ -457,5 +598,7 @@ class GymManageSystem
     Member* mb_;
     Coach* ch_;
     Course* cs_;
+    Equipment* eq_;
+    CoachCourse* cc_;
 
 };

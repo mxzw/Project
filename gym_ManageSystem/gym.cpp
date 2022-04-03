@@ -8,7 +8,7 @@ int main()
   GymManageSystem* gm = new GymManageSystem();
   gm->InitMember();
   gm->StartGymSys();
-  // gm->test();
+//   gm->test();
 
   return 0;
 }

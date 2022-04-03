@@ -1,7 +1,6 @@
 
 
 <script src="../static/jquery-3.2.1.min.js">
-  window.onunload(alert("yemian"))
 </script>
 <html>
 <head>
@@ -22,25 +21,24 @@
 
     $(function () {
       $('#table').bootstrapTable({
-        url:'../qc/query',
+        url:'../../EquipmentQuery',
         columns:[
           {
-            field:'eqId',
+            field:'eq_id',
             title:'编号'
           }, {
-            field:'eqName',
+            field:'eq_name',
             title:'器材名称'
           },{
-            field:'eqText',
+            field:'eq_text',
             title:'器材说明'
           },
           {
             field:'xx',title:'操作',
-            formatter : function(value, row, index) {
+            formatter : function(value, data, index) {
               return "<a title='删除' href='javascript:del("
-                      + row.eqId + ")'><span class='glyphicon glyphicon-trash'></span></a>";
+                      + data.eq_id + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a href='javascript:upd1("+data.eq_id+")' class='glyphicon glyphicon-pencil'></a>";
             }
-
           }
         ],
         method:'post',
@@ -52,59 +50,137 @@
         pageNumber:1,
         pageSize:5,
         pagination:true,
-        sidePagination:'server',
+        sidePagination:'client',
 
       });
     })
 
-
-
-
-
     //获取当前的条件个页面页数即使更新值
-    function queryParams(afds){
+    function queryParams(){
       var i={
-        "pageSize":afds.pageSize,
-        "pageNumber":afds.pageNumber,
         "id":$('#eqName').val(),
       };
       return i;
     }
+
+    function upd1(id){
+      $("#myModal2").modal("show");
+      $('#id').val(id);
+      var returnData = {};
+      returnData["eq_id"]=id;
+
+      $.ajax(
+              {
+                url:"../../IdToEquipmentMessage",
+                type:"POST",
+                dataType:"JSON",
+                data: JSON.stringify(returnData),
+                async:false,
+                success:function (data)
+                {
+                  // $("#table").bootstrapTable("load",data) ;
+                  $("#xgname").val(data.eq_name);
+                  $("#xgmoney").val(data.eq_text);
+                },
+              })
+    }
+
     //查询
     function chaxun(){
-      var opt=$('#table').bootstrapTable('getOptions');
-      var eqname=$('#eqname').val();
-      $.post("../qc/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"hyname":eqname},function (data) {
 
-        $("#table").bootstrapTable('load',data) ;
-      })
+      var searchData = {};
+      searchData["eq_name"] =$('#eqname').val();
+
+
+      $.ajax(
+              {
+                url:"../../EquipmentNameSearch",
+                type:"POST",
+                dataType:"JSON",
+                data: JSON.stringify(searchData),
+                async:false,
+                success:function (data)
+                {
+                  $("#table").bootstrapTable('load',data) ;
+                },
+              })
     }
 
     function del(eqId) {
-      $.post("../qc/delete",{"eqId":eqId},function (releset) {
-        if(releset != null){
-          $("#dg").bootstrapTable('load',releset) ;
-          swal(
-                  {
-                    title:"删除成功",
-                    type:"success",
-                    timer: 1500,
-                    showConfirmButton: false
-                  }
-          )
-          chaxun();
-        }else{
-          swal(
-                  {
-                    title:"删除失败",
-                    type:"warning",
-                    timer: 1500,
-                    showConfirmButton: false
+      var returnData = {};
+      returnData["eq_id"] = eqId;
+      $("#exampleModal").modal("hide") ;
+      $.ajax(
+              {
+                url: "../../DelEquipmentMessage",
+                type: "POST",
+                dataType: "JSON",
+                data: JSON.stringify(returnData),
+                async: false,
+                success: function (data) {
+                  if (data != null) {
+                    $("#table").bootstrapTable('load', data);
+                    swal(
+                            {
+                              title: "删除成功",
+                              type: "success",
+                              timer: 1500,
+                              showConfirmButton: false
+                            }
+                    )
+                  } else {
+                    swal(
+                            {
+                              title: "删除失败",
+                              type: "warning",
+                              timer: 1500,
+                              showConfirmButton: false
 
+                            }
+                    )
                   }
-          )
-        }
-      })
+                }
+              });
+    }
+
+    function upd(){
+      var returnData = {};
+      returnData["eq_id"] =  $('#id').val();
+      returnData["eq_name"] = $("#xgname").val();
+      returnData["eq_text"]= $("#xgmoney").val();
+      $("#myModal2").modal("hide") ;
+
+      $.ajax(
+              {
+                url:"../../UpdateEquipmentMessage",
+                type:"POST",
+                dataType:"JSON",
+                data: JSON.stringify(returnData),
+                async:false,
+                success:function (data)
+                {
+                  if(data != null){
+                    $("#table").bootstrapTable('load',data) ;
+                    swal(
+                            {
+                              title:"修改成功",
+                              type:"success",
+                              timer: 1500,
+                              showConfirmButton: false
+                            }
+                    )
+                  }else{
+                    swal(
+                            {
+                              title:"修改失败",
+                              type:"warning",
+                              timer: 1500,
+                              showConfirmButton: false
+                            }
+                    )
+                  }
+                },
+              });
     }
 
 
@@ -122,31 +198,42 @@
       if(!validateAdd()){
         return;
       }
-      var name=$('#upname').val();
-      var text1 =$('#uptext').val();
-      $.post("../qc/insert",{"eqName":name,"eqText":text1},function (releset) {
-        if(releset != null){
-          $("#table").bootstrapTable('load',releset) ;
-          $('#exampleModal').modal('hide');
-          swal(
-                  {
-                    title:"添加成功",
-                    type:"success",
-                    timer: 1500,
-                    showConfirmButton: false
+      var returnData = {};
+      returnData["eq_name"]=$('#upname').val();
+      returnData["eq_text"] =$('#uptext').val();
+      $("#exampleModal").modal("hide") ;
+      $.ajax(
+              {
+                url:"../../AddEquipmentMessage",
+                type:"POST",
+                dataType:"JSON",
+                data: JSON.stringify(returnData),
+                async:false,
+                success:function (data)
+                {
+                  if(data != null){
+                    $("#table").bootstrapTable('load',data) ;
+                    swal(
+                            {
+                              title:"添加成功",
+                              type:"success",
+                              timer: 1500,
+                              showConfirmButton: false
+                            }
+                    )
                   }
-          )
-        }else{
-          swal(
-                  {
-                    title:"添加失败",
-                    type:"warning",
-                    timer: 1500,
-                    showConfirmButton: false
+                  else{
+                    swal(
+                            {
+                              title:"添加失败",
+                              type:"warning",
+                              timer: 1500,
+                              showConfirmButton: false
+                            }
+                    )
                   }
-          )
-        }
-      })
+                },
+              });
     }
 
     function validateAdd() {
@@ -211,6 +298,43 @@
     </div>
   </div>
 </div>
+
+
+<div class="modal fade" id="myModal2">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"
+                aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel2">❤修改器材</h4>
+      </div>
+      <div class="modal-body">
+        <! -- form开始
+        <form>
+          <input type="hidden" id="id" name="id">
+          <div class="form-group">
+            <label for="xgname" class="col-sm-4 control-label"style="margin-top: 10px">器材名称</label>
+            <div class="col-sm-8">
+              <input type="text"style="margin-top: 10px" class="form-control" id="xgname" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="xgmoney" class="col-sm-4 control-label"style="margin-top: 10px">器材说明</label>
+            <div class="col-sm-8">
+              <input type="text"style="margin-top: 10px" class="form-control" id="xgmoney" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
+            </div>
+          </div>
+        </form>
+        &nbsp;
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+          <button onclick="upd()"  type="button" class="btn btn-primary">修改</button>
+        </div>
+      </div>
+    </div>
+  </div></div>
 
 </body>
 </html>
