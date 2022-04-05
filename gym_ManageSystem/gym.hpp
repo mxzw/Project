@@ -572,6 +572,21 @@ class GymManageSystem
           res.body = this->cc_->CoachCourseMessageQuery(md_);
           res.set_header("content-Type","application/json;charset=UTF-8");
         });
+    //查询根据id查询单独一行的信息返回给前端
+    http_svr_.Get("/OneRowQuery",[=](const Request& req,Response& res)
+        {
+          int pid = -1;
+
+          if(req.has_param("p_id"))
+            pid =stoi(req.get_param_value("p_id"));
+
+          if(pid != -1)
+            res.body = this->cc_->OneRowMessageQuery(md_,pid);
+          else 
+            cout << "Get param not has p_id" << endl;
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
     
       //绑定地址
       http_svr_.set_mount_point("/","./www");

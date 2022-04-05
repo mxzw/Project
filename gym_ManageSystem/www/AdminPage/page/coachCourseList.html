@@ -20,13 +20,14 @@
 
     <script>
         $(function () {
+            //在增加教练课程信息中，点击课程时进行查询
             $("#subject").change(function () {
                 var sid = $("#subject").val();
                 $.post("../private/cha",{"id":sid},function(e) {
-                    $('#dj').val(e.sellingPrice);
+                    $('#dj').val(e.sellingPrice); //单价
                     var s = 1;
-                    $('#sl').val(s);
-                    $('#zje').val(e.sellingPrice*s);
+                    $('#sl').val(s); //数量
+                    $('#zje').val(e.sellingPrice*s); //总金额
                 })
             })
             $('#table').bootstrapTable({
@@ -43,7 +44,7 @@
                         title: '会员名称'
                     },
                     {
-                        field: 'ch.coach_name',
+                        field: 'cm.coach_name',
                         title: '教练名称'
                     },{
                         field: 'cs.course_name',
@@ -72,17 +73,17 @@
                 pagination:true,
                 sidePagination:'client',
                 detailView:true,
-                onExpandRow:function(index, data, $detail){
+                onExpandRow:function(index, row, $detail){
                     var aa=$detail.html("<table></table>").find('table');
-                    var idd=data.pid;
+                    var idd=row.p_id;
                     aa.bootstrapTable({
-                        url:'../privateinfo/query2?pid='+idd+'',
+                        url:'../../OneRowQuery?p_id='+idd+'',
                         columns:[{
                             field:'p_id',
                             title:'编号',
                         },
                             {
-                                field: 'member.member_name',
+                                field: 'um.member_name',
                                 title: '会员名称'
                             },
                             {
@@ -92,7 +93,7 @@
                                 field: 'purchase_state',
                                 title: '状态',
                                 formatter:function (value,data,index) {
-                                    if(data.state===1){
+                                    if(data.purchase_state===1){
                                         return "购买";
                                     }else{
                                         return "赠送";
@@ -221,13 +222,11 @@
                 });
         }
         //获取当前的条件个页面页数即使更新值
-        function queryParams(afds){
+        function queryParams(){
             var i={
-                "pageSize":afds.pageSize,
-                "pageNumber":afds.pageNumber,
-                "coach.coachid":$('#coachid').val(),
-                "subject.subjectid":$('#subjectid').val(),
-                "member.memberid":$('#memberid').val(),
+                "cm.coach_id":$('#coachid').val(),
+                "cs.course_id":$('#subjectid').val(),
+                "um.member_id":$('#memberid').val(),
             };
             return i;
         }
@@ -508,7 +507,7 @@
                         aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
-                <h4 class="modal-title" id="myModalLabel">❤增加新教练信息</h4>
+                <h4 class="modal-title" id="myModalLabel">增加教练课程信息</h4>
             </div>
             <div class="modal-body">
                 <!-- form开始 -->
@@ -544,7 +543,9 @@
 
                                 </select>
                             </td>
-                            <td style="width:500px"><label style="float: left;margin-top: 10px">单&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 价：</label><input type="text" id="dj" readonly style="float: left;margin-top: 10px;margin-right:20px;width: 125px" class="form-control" ><label style="float: left;margin-top: 10px">数&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;量：</label><input type="text" id="sl" value="1" style="float: left;margin-top: 10px;width: 125px" oninput="slChange()" class="form-control" ></td>
+                            <td style="width:500px"><label style="float: left;margin-top: 10px">单&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 价：</label><input type="text" id="dj" readonly style="float: left;margin-top: 10px;margin-right:20px;width: 125px" class="form-control" >
+                                <label style="float: left;margin-top: 10px">数&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;量：</label><input type="text" id="sl" value="1" style="float: left;margin-top: 10px;width: 125px" oninput="slChange()" class="form-control" >
+                            </td>
                         </tr>
                         <tr style="margin: 20px; margin-left: 20px;padding: 20px;">
                             <td colspan="2" style="width:900px;padding-left: 20px"><label style="float: left;margin-top: 10px">备&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 注：</label>
