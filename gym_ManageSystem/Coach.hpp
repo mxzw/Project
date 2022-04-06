@@ -134,6 +134,22 @@ class Coach{
       //统计数据的个数
       mysql_free_result(res);
     }
+    int GetCoachId(ManageDB*& md_,string coach_name)
+    {
+      char sql[1024]={0};                     
+#define GetCoachId_SQL "select coach_id from CoachInfo where coach_name=\'%s\';"
+      snprintf(sql,sizeof(sql)-1,GetCoachId_SQL,coach_name.c_str());
+      MYSQL_RES* res;                                                  
+      if(!md_->ExecSQL(sql,res))          
+      {                                              
+        cout << "ExecSQL failed : GetCoachId, sql is " << sql << endl;
+        mysql_free_result(res);                                                             
+        return -1;                                  
+      }                                
+      MYSQL_ROW row = mysql_fetch_row(res);                                       
+      mysql_free_result(res);                                                             
+      return atoi(row[0]);
+    }
     //根据教练名称模糊搜索教练信息
     string CoachMessageSearch(ManageDB*& md_,string name)
     {

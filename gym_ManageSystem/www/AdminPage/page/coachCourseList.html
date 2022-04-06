@@ -22,14 +22,56 @@
         $(function () {
             //在增加教练课程信息中，点击课程时进行查询
             $("#subject").change(function () {
-                var sid = $("#subject").val();
-                $.post("../private/cha",{"id":sid},function(e) {
-                    $('#dj').val(e.sellingPrice); //单价
-                    var s = 1;
-                    $('#sl').val(s); //数量
-                    $('#zje').val(e.sellingPrice*s); //总金额
-                })
+                var searchData = {};
+                searchData["course_id"]=$('#subject').val();
+                $.ajax(
+                    {
+                        url:"../../IdToCourseMessage",
+                        type:"POST",
+                        dataType:"JSON",
+                        data:JSON.stringify(searchData),
+                        async:false,
+                        success:function (data)
+                        {
+                            $('#dj').val(data.course_price); //单价
+                            var s = 1;
+                            $('#sl').val(s); //数量
+                            $('#zje').val(data.course_price*s); //总金额
+                        },
+                    });
             })
+            //教练名下拉选项
+            $.ajax(
+                {
+                    url:"../../CoachQuery",
+                    type:"POST",
+                    dataType:"JSON",
+                    async:false,
+                    success:function (data)
+                    {
+                        var e=data["data"];
+                        $(e).each(function () {
+                            $('#coachid').append('<option value='+this.coach_id+' >'+this.coach_name+'</option>');
+                        })
+                    },
+                });
+
+            //课程名下拉选项
+            $.ajax(
+                {
+                    url:"../../CourseQuery",
+                    type:"POST",
+                    dataType:"JSON",
+                    async:false,
+                    success:function (data)
+                    {
+                        var e=data["data"];
+                        $(e).each(function () {
+                            $('#subjectid').append('<option value='+this.course_id+' >'+this.course_name+'</option>');
+                        })
+                    },
+                });
+
             $('#table').bootstrapTable({
                 url:'../../CoachCourseQuery',
                 method:'post',
@@ -59,7 +101,7 @@
                         field:'xx',title:'操作',
                         formatter : function(value, data, index) {
                             return "<a title='删除' href='javascript:del1("
-                                + data.pid + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a href='javascript:upd(" + data.pid + ")' class='glyphicon glyphicon-pencil'></a>";
+                                + data.p_id + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a href='javascript:upd(" + data.p_id + ")' class='glyphicon glyphicon-pencil'></a>";
 
                         }
                     }
@@ -116,21 +158,23 @@
                 },
             })
         });
+
+
         function kan1() {
             $("#myModal3").modal("show");
             $('#tb').bootstrapTable({
-                url:'../private/query2',
+                url:'../../MemberQuery',
                 method:'post',
                 contentType:"application/x-www-form-urlencoded",
                 columns:[{ radio:true
-                }, {
-                    field: 'memberId',
+                },  {
+                    field: 'member_id',
                     title: '编号'
                 },{
-                    field: 'memberName',
+                    field: 'member_name',
                     title: '会员名称'
                 },{
-                    field: 'membertypes.typeName',
+                    field: 'card_type.type_name',
                     title: '会员类型'
                 }
                 ],
@@ -140,40 +184,49 @@
                 pagination:true,
                 onDblClickRow: function (row) {
                     $('#myModal3').modal("hide");
-                    id = row.memberId;
-                    $.post("../private/cha2",{"id":id},function(e) {
-                        $.post("../privateinfo/count",{'memid':id},function(e) {
-                            $('#cishu').text(e);
-                        })
-                        $('#kh').val(e.memberId);
-                        $('#xm').text(e.memberName);
-                        $('#type').text(e.membertypes.typeName);
-                        $('#dqdate').text(e.memberxufei);
-                        $('#hystatic').text(e.memberStatic);
-                        if(e.memberStatic==1){
-                            $('#hystatic').text("正常");
-                        }else{
-                            $('#hystatic').text("请续费");
-                        }
-                    })
+                    var searchData = {};
+                    searchData["member_id"]=row.member_id;
+                    $.ajax(
+                        {
+                            url:"../../IdToMemberMessage",
+                            type:"POST",
+                            dataType:"JSON",
+                            data:JSON.stringify(searchData),
+                            async:false,
+                            success:function (data)
+                            {
+                                $('#phone').text(data.member_phone);
+                                $('#kh').val(data.member_id);
+                                $('#xm').text(data.member_name);
+                                $('#type').text(data.card_type.type_name);
+                                $('#dqdate').text(data.expire_date);
+                                $('#hystatic').text(data.member_state);
+                                if(data.member_state===1){
+                                    $('#hystatic').text("正常");
+                                }else{
+                                    $('#hystatic').text("请续费");
+                                }
+                            },
+                        });
                 }
             })
         }
+        //输入会员编号查询
         function kan2() {
             $("#myModal3").modal("show");
             $('#tb').bootstrapTable({
-                url:'../private/query2',
+                url:'../../MemberQuery',
                 method:'post',
                 contentType:"application/x-www-form-urlencoded",
                 columns:[{ radio:true
                 }, {
-                    field: 'memberId',
+                    field: 'member_id',
                     title: '编号'
                 },{
-                    field: 'memberName',
+                    field: 'member_name',
                     title: '会员名称'
                 },{
-                    field: 'membertypes.typeName',
+                    field: 'card_type.type_name',
                     title: '会员类型'
                 }
                 ],
@@ -181,12 +234,9 @@
                 queryParams:queryParams,
                 height:360,
                 pagination:true,
-                onDblClickRow: function (row) {
+                onDblClickRow: function (row){
                     $('#myModal3').modal("hide");
-                    id = row.memberId;
-                    $.post("../private/cha2",{"id":id},function(e) {
-                        $('#memberid').val(e.memberId);
-                    })
+                    $('#memberid').val(row.member_id);
                 }
             })
         }
@@ -205,14 +255,19 @@
                 },
                 function (isConfirm) {
                     if (isConfirm) {
-                        var opt=$('#table').bootstrapTable('getOptions');
-                        var coachid=$('#coachid').val();
-                        var subjectid=$('#subjectid').val();
-                        var memberid=$('#memberid').val();
-                        $.post('../privateinfo/del',{'id':id,"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"coachid":coachid,"subjectid":subjectid,"memberid":memberid},function(data){
-                            //重新给table绑定数据
-                            $("#table").bootstrapTable("load",data) ;
-                        }) ;
+                        var searchData = {};
+                        searchData["p_id"]=id;
+                        $.ajax(
+                            {
+                                url:"../../DelCoachCourseMessage",
+                                type:"POST",
+                                dataType:"JSON",
+                                data:JSON.stringify(searchData),
+                                async:false,
+                                success:function (data) {
+                                    $("#table").bootstrapTable("load", data);
+                                }
+                            });
                         swal("删除！", "删除成功",
                             "success");
                     } else {
@@ -232,13 +287,22 @@
         }
         //查询
         function search(){
-            var opt=$('#table').bootstrapTable('getOptions');
-            var coachid=$('#coachid').val();
-            var subjectid=$('#subjectid').val();
-            var memberid=$('#memberid').val();
-            $.post("../privateinfo/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"coachid":coachid,"subjectid":subjectid,"memberid":memberid},function (releset) {
-                $("#table").bootstrapTable('load',releset) ;
-            })
+            var searchData = {};
+            searchData["coach_id"]=$('#coachid').val();
+            searchData["course_id"]=$('#subjectid').val();
+            searchData["member_id"]=$('#memberid').val() === "" ? -1 : $('#memberid').val();
+            $.ajax(
+                {
+                    url:"../../CoachCourseSearch",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(searchData),
+                    async:false,
+                    success:function (data)
+                    {
+                        $("#table").bootstrapTable('load',data) ;
+                    },
+                })
         }
         //下拉框赋值
         function totian() {
@@ -250,29 +314,29 @@
             $("#sl").val("") ;
             $('#zje').val("") ;
             $('#ssq').val("") ;
-            $('#cishu').text("");
+            $('#phone').text("");
             $('#kh').val("");
             $('#xm').text("");
             $('#type').text("");
             $('#dqdate').text("");
             $('#hystatic').text("");
-            $.post("../private/topcoach",{},function (releset) {
-                var e=releset;
+            $.post("../../CoachCourseQuery",{},function (data) {
+                var e=data["data"];
                 var ss ="";
                 var ssss="";
                 var sss="<option value='-1'>"+"--请选择--"+"</option>";
-                $(e.coach).each(function () {
+                $(e).each(function () {
                     /*$('#coach').append('<option value='+this.coachId+' >'+this.coachName+'</option>');*/
-                    ss += "<option value='"+this.coachId+"'>"+"❤"+this.coachName+"</option>";
+                    ss += "<option value='"+this.cm.coach_id+"'>"+"✨"+this.cm.coach_name+"</option>";
                     ssss=sss+ss;
                     $('#coach').html(ssss);
                 })
                 var tt ="";
                 var tttt="";
                 var ttt="<option value='-1'>"+"--请选择--"+"</option>";
-                $(e.subject).each(function () {
+                $(e).each(function () {
                     /* $('#subject').append('<option value='+this.subId+' >'+this.subname+'</option>');*/
-                    tt += "<option value='"+this.subId+"'>"+"☆☆☆"+this.subname+"</option>";
+                    tt += "<option value='"+this.cs.course_id+"'>"+"💕"+this.cs.course_name+"</option>";
                     tttt=ttt+tt;
                     $('#subject').html(tttt);
                 })
@@ -284,14 +348,9 @@
                 return;
             }
             //接收数据
-            var opt=$('#table').bootstrapTable('getOptions');
-            var coachid=$('#coachid').val();
-            var subjectid=$('#subjectid').val();
-            var memberid=$('#memberid').val();
             var hyid=$("#kh").val();
             var jlid = $("#coach").val();
             var kcid = $("#subject").val();
-            var admin = "asdf";
             var date= $("#datett").val();
             var state = 1;
             var remark =$("#bz").val() ;
@@ -300,32 +359,46 @@
             var realprice =$('#ssq').val() ;
             $("#myModal").modal("hide") ;
 
-            $.post('../coach/cha',{'id':jlid},function(data){
-                $("#table").bootstrapTable("load",data) ;
-                if(data.coachStatic==0){
-                    $.post('../private/add',{'member.memberId':hyid,'coach.coachId':jlid,'subject.subId':kcid,'count':count,'countprice':countprice,'realprice':realprice,'date':date,'state':state,"remark":remark,'admin':admin},function(data){
-                        $("#table").bootstrapTable("load",data) ;
-                        $.post("../privateinfo/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"coachid":coachid,"subjectid":subjectid,"memberid":memberid},function (releset) {
-                            $("#table").bootstrapTable('load',releset) ;
-                        })
-                        $.post('../goodinfo/chamember',{'memberId':hyid},function(data){
-                            var money = data.memberbalance;
-                            var qian  = parseInt(money -countprice);
-                            $.post('../goodinfo/updmember',{'memberId':hyid,'memberbalance':qian},function(data){
-                            });
-                        });
-                        swal("添加！", "添加私教课程成功",
-                            "success");
-                    }) ;
-                }else{
-                    swal("失败！", "此教练正休假或已离职",
-                        "error");
-                    $.post("../privateinfo/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"coachid":coachid,"subjectid":subjectid,"memberid":memberid},function (releset) {
-                        $("#table").bootstrapTable('load',releset) ;
-                    })
-                }
-
-            })
+            var returnData = {};
+            returnData["coach_id"]=jlid;
+            $.ajax(
+                {
+                    url:"../../IdToCoachMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        if(data.coach_state===0)
+                        {
+                            var returnData = {};
+                            returnData["member_id"]=hyid;
+                            returnData["coach_id"]=jlid;
+                            returnData["course_id"]=kcid;
+                            returnData["purchase_num"]=count;
+                            returnData["purchase_date"]=date;
+                            returnData["purchase_state"]=state;
+                            returnData["purchase_note"]=remark;
+                            $.ajax(
+                                {
+                                    url:"../../AddCoachCourseMessage",
+                                    type:"POST",
+                                    dataType:"JSON",
+                                    data: JSON.stringify(returnData),
+                                    async:false,
+                                    success:function (data) {
+                                        $("#table").bootstrapTable("load",data) ;
+                                    }
+                                });
+                            swal("添加！", "添加私教课程成功",
+                                "success");
+                        }else{
+                            swal("失败！", "此教练正休假或已离职",
+                                "error");
+                        }
+                    },
+                })
         }
 
         function validateAdd() {
@@ -387,51 +460,61 @@
 
 
             return true;
-        }
+        };
 
-
-        //修改赋值
+        //修改赋值 p_id
         function upd(id){
             $("#myModal2").modal("show");
             $('#id').val(id);
-            $.post('../privateinfo/cha',{'id':id},function(data){
-                $("#table").bootstrapTable("load",data) ;
-                $("#hykh").text(data.member.memberId);
-                $("#hyxm").text(data.member.memberName);
-                $("#yssj").text(data.coach.coachName);
-                $.post("../private/topcoach",{},function (releset) {
-                    var e=releset;
-                    var tt ="";
-                    var tttt="";
-                    var ttt="<option value='-1'>"+"--请选择--"+"</option>";
-                    $(e.coach).each(function () {
-                        tt += "<option value='"+this.coachId+"'>"+"❤"+this.coachName+"</option>";
-                        tttt=ttt+tt;
-                        $('#xgcoach').html(tttt);
-                    })
-                })
-            }) ;
+
+            $.ajax(
+                {
+                    url:'../../OneRowQuery?p_id='+id+'',
+                    type:"GET",
+                    dataType:"JSON",
+                    async:false,
+                    success:function (data) {
+                       $("#hykh").text(data[0].um.member_id);
+                        $("#hyxm").text(data[0].um.member_name);
+                        $("#yssj").text(data[0].cm.coach_name);
+
+                        $.post("../../CoachQuery",{},function (data) {
+                            var e=data["data"];
+                            var tt ="";
+                            var tttt="";
+                            var ttt="<option value='-1'>"+"--请选择--"+"</option>";
+                            $(e).each(function () {
+                                tt += "<option value='"+this.coach_id+"'>"+"✨"+this.coach_name+"</option>";
+                                tttt=ttt+tt;
+                                $('#xgcoach').html(tttt);
+                            })
+                        })
+                    }
+                });
         }
         //修改
         function upd1() {
             if(!validateUpd()){
                 return;
             }
-            var opt=$('#table').bootstrapTable('getOptions');
-            var coachid=$('#coachid').val();
-            var subjectid=$('#subjectid').val();
-            var memberid=$('#memberid').val();
-            var id =  $('#id').val();
-            var coachname = $("#xgcoach").val();
+            var returnData = {};
+            returnData["p_id"] =  $('#id').val();
+            returnData["coach_id"] = $("#xgcoach").val();
             $("#myModal2").modal("hide") ;
-            $.post('../privateinfo/upd',{'pid':id,'coach.coachId':coachname},function(data){
-                $.post("../privateinfo/query",{"pageSize":opt.pageSize,"pageNumber":opt.pageNumber,"coachid":coachid,"subjectid":subjectid,"memberid":memberid},function (releset) {
-                    $("#table").bootstrapTable('load',releset) ;
-                })
-                $("#table").bootstrapTable("load",data) ;
-                swal("修改！", "修改成功",
-                    "success");
-            }) ;
+            $.ajax(
+                {
+                    url:"../../UpdateCoachCourseMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data) {
+                        $("#table").bootstrapTable("load",data) ;
+                        swal("修改！", "修改成功",
+                            "success");
+                    }
+                });
+
         }
 
         function validateUpd() {
@@ -476,17 +559,11 @@
 
             教练名称:
             <select id="coachid" class="form-control">
-                <option value="">请选择</option>
-                <c:forEach items="${a.coach}" var="coachq">
-                    <option value="${coachq.coachId}">${coachq.coachName}</option>
-                </c:forEach>
+                <option value="-1">请选择</option>
             </select>
             课程编号:
             <select id="subjectid" class="form-control">
-                <option value="">请选择</option>
-                <c:forEach items="${a.subject}" var="s">
-                    <option value="${s.subId}">${s.subname}</option>
-                </c:forEach>
+                <option value="-1">请选择</option>
             </select>
             <button onclick="search()" type="button" class="btn btn-default" >查询</button>
             <button type="button" class="btn btn-default"  style="float: right;" data-toggle="modal" data-target="#myModal" onclick="totian()"><span class="glyphicon glyphicon-plus"></span>添加会员私教课程</button>
@@ -519,11 +596,11 @@
                                 <a title='查询' onclick="kan1()" href="#" style="float: right;margin-top: -30px;margin-right: 20px" class='glyphicon glyphicon-search'></a>
                             </td>
                             <td style="width:300px"><label style="float: left;margin-top: 10px">会员姓名：</label><span style="display: inline-block;margin-top: 10px" id="xm"></span></td>
-                            <td style="width:300px"><label style="float: left;margin-top: 10px">会员类型：</label><span style="display: inline-block;margin-top: 10px" id="type"></span></td>
+                            <td  style="width:300px"><label style="float: left;margin-top: 10px">会员电话：</label><span style="display: inline-block;margin-top: 10px" id="phone"></span></td>
                         </tr>
                         <tr style="margin-top: 20px; margin-left: 20px;padding: 20px;height: 40px;padding-left: 20px">
                             <td  style="width:450px;padding-left: 20px"><label style="float: left;margin-top: 10px">到期时间：</label><span style="display: inline-block;margin-top: 10px" id="dqdate"></span></td>
-                            <td  style="width:300px"><label style="float: left;margin-top: 10px">私教次数：</label><span style="display: inline-block;margin-top: 10px" id="cishu"></span></td>
+                            <td style="width:300px"><label style="float: left;margin-top: 10px">会员类型：</label><span style="display: inline-block;margin-top: 10px" id="type"></span></td>
                             <td  style="width:300px"><label style="float: left;margin-top: 10px">会员状态：</label><span style="display: inline-block;margin-top: 10px" id="hystatic"></span> </td>
                         </tr>
                     </table>
@@ -538,7 +615,7 @@
                             <td style="width:450px"><label style="float: left;margin-top: 10px">购买日期：</label><input type="date" id="datett" style="margin-top: 10px;width: 350px" class="form-control" ></td>
                         </tr>
                         <tr style="margin: 20px; margin-left: 20px;padding: 20px;">
-                            <td style="width:400px;padding-left: 20px"><label style="float: left;margin-top: 10px">项目名称：</label>
+                            <td style="width:400px;padding-left: 20px"><label style="float: left;margin-top: 10px">课程名称：</label>
                                 <select style="margin-top: 10px;width: 300px" id="subject" class="form-control">
 
                                 </select>

@@ -445,6 +445,67 @@ class Member
       //统计数据的个数
       mysql_free_result(res);
     }
+    //根据id查询所有的会员信息
+    string IdToMemberMessage(ManageDB*& md_,int mid)
+    {
+      char sql[1024]={0};
+#define QueryAllMemberMessage_SQL "select member_name,member_phone,member_sex,member_age,member_typeid,login_date,member_state,increase_day from MemberInfo where member_id = %d;"
+      snprintf(sql,sizeof(sql)-1,QueryAllMemberMessage_SQL,mid);
+      MYSQL_RES* res;
+      if(!md_->ExecSQL(sql,res))
+      {
+        cout << "ExecSQL failed : MemberQuery, sql is " << sql << endl;
+        mysql_free_result(res);
+        return "";
+      }
+      MYSQL_ROW row = mysql_fetch_row(res);
+      // member_id,member_name,member_phone,member_sex,member_age,member_typeid,login_date,member_state 
+      string member_name(row[0]);
+      string member_phone(row[1]);
+      int member_sex = atoi(row[2]);
+      int member_age = atoi(row[3]);
+      int member_typeid = atoi(row[4]);
+      string login_date(row[5]);
+      int member_state = atoi(row[6]);
+      int increase_day = atoi(row[7]);
+
+      int cardId = member_typeid;
+      //查询该用户所持有会员卡的所有信息
+      struct CardMessage card_type;
+      QueryAllCardMessage(md_,cardId,card_type);
+      //组织查询会员卡的类型的时间，用于计算到期时间
+      int cardTime = card_type.type_day;
+
+      //将登录时间初始化为Data格式
+      string tmp(login_date);
+      Date date(tmp);
+      //加上yay-mm-dd 中的0 ，比如2021-2-1 --> 2021-02-01,目的在于统一时间的显示
+      login_date = date.ToString();
+
+      date += cardTime + increase_day;
+
+      //用于存储过期时间
+      string expire_date = date.ToString();
+
+
+      //若过期时间 < 当前时间，说明当前会员卡已经过期，需要续卡
+      if(expire_date < Date::GetNowDate())
+      {
+        //修改Member表中的member_state
+        member_state = -1;
+        if(!UpdateMenberState(md_,member_state,mid))
+        {
+          cout << "UpdateMenberState faild " << endl;
+          mysql_free_result(res);
+          return "";
+        }
+      }
+      //用来存储从数据库中读出的用户的信息
+      UserMessage um(mid,member_name,member_phone,member_sex,member_age,card_type,login_date,member_state,expire_date);
+      //统计数据的个数
+      mysql_free_result(res);
+      return xpack::json::encode(um);
+    }
 
     void QueryAllCardMessage(ManageDB*& md_,int mid,struct CardMessage& cm)
     {

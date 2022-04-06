@@ -585,8 +585,70 @@ class GymManageSystem
           else 
             cout << "Get param not has p_id" << endl;
 
+          res.set_header("content-type","application/json;charset=UTF-8");
+        });
+    //根据用户、课程、教练id检索教练课程信息
+    http_svr_.Post("/CoachCourseSearch",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          res.body = this->cc_->CoachCourseMessageSearch(md_,req_value);
           res.set_header("content-Type","application/json;charset=UTF-8");
         });
+    //根据用户id查询用户所有信息
+    http_svr_.Post("/IdToMemberMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          int mid = stoi(req_value["member_id"].asString());
+          res.body = this->mb_->IdToMemberMessage(md_,mid);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //增加一个新的教练课程信息
+    http_svr_.Post("/AddCoachCourseMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->cc_->AddCoachCourseMessage(md_,req_value))
+            cout << "AddCoachCourseMessage failed ! " << endl;
+          else 
+            res.body = this->cc_->CoachCourseMessageQuery(md_);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //根据id和变更教练姓名修改教练课程信息
+    http_svr_.Post("/UpdateCoachCourseMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->cc_->UpdateCoachCourseMessage(md_,req_value))
+            cout << "UpdateCoachCourseMessage failed ! " << endl;
+          else 
+            res.body = this->cc_->CoachCourseMessageQuery(md_);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //根据id删除教练课程信息
+    http_svr_.Post("/DelCoachCourseMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->cc_->DelCoachCourseMessage(md_,req_value))
+            cout << "DelCoachCourseMessage failed ! " << endl;
+          else 
+            res.body = this->cc_->CoachCourseMessageQuery(md_);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+
+
+    
+  
     
       //绑定地址
       http_svr_.set_mount_point("/","./www");

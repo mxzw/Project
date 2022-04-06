@@ -178,7 +178,7 @@ class ManageDB{
       //等于0就成功，不等于0就失败
       if(mysql_query(&mq_,sql.c_str())!=0)
       {
-        cout << "ExecSQL failed !" << endl;
+        cout << "ExecSQL failed,sql is " << sql << endl;
         return false;
       }
 
