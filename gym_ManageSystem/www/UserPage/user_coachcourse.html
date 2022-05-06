@@ -1,0 +1,1057 @@
+<html>
+<head>
+    <title>会员列表</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" href="../AdminPage/static/bootstrap/css/bootstrap.css"/>
+    <link rel="stylesheet" href="../AdminPage/static/table/bootstrap-table.min.css"/>
+    <script type="text/javascript" src="../AdminPage/static/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../AdminPage/static/bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../AdminPage/static/table/bootstrap-table.js"></script>
+    <script type="text/javascript" src="../AdminPage/static/table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="../AdminPage/static/sweetalert/sweetalert.css"/>
+    <script type="text/javascript" src="../AdminPage/static/sweetalert/sweetalert.min.js"></script>
+    <script src="../AdminPage/static/bootstrap/js/tableExport.js"></script>
+    <link rel="stylesheet" href="../AdminPage/static/date/bootstrap-datetimepicker.min.css"/>
+    <script type="text/javascript" src="../AdminPage/static/date/Moment.js"></script>
+    <script type="text/javascript" src="../AdminPage/static/date/bootstrap-datetimepicker.min.js"></script>
+
+    <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="http://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="http://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+    <!-- global css -->
+    <link type="text/css" href="css/font-awesome.min.css" rel="stylesheet"/>
+    <link type="text/css" href="css/custom_css/metisMenu.css" rel="stylesheet"/>
+    <link type="text/css" href="vendors/c3-chart/c3.css" rel="stylesheet">
+    <!-- Date picker -->
+    <link href="vendors/air-datepicker-master/dist/css/datepicker.min.css" rel="stylesheet" type="text/css">
+    <!-- end of global css -->
+    <!-- page level css -->
+    <link type="text/css" href="vendors/jquery-circliful/css/jquery.circliful.css" rel="stylesheet">
+    <link type="text/css" href="vendors/progressbar/css/bootstrap-progressbar.min.css" rel="stylesheet">
+    <link type="text/css" href="vendors/fullcalendar/css/fullcalendar.css" rel="stylesheet">
+    <link type="text/css" href="vendors/select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+    <link type="text/css" href="css/custom_css/calendar_custom.css" rel="stylesheet">
+    <link type="text/css" href="vendors/c3-chart/c3.css" rel="stylesheet">
+    <link type="text/css" href="vendors/c3-chart/nv.d3.css" rel="stylesheet">
+    <link type="text/css" href="css/custom_css/fitness.css" rel="stylesheet"/>
+    <link type="text/css" href="css/custom_css/style-switcher.css" rel="stylesheet"/>
+    <link type="text/css" href="css/custom_css/panel.css" rel="stylesheet"/>
+    <link type="text/css" href="css/custom_css/admin_dashboard.css" rel="stylesheet">
+    <!-- end of page level css -->
+
+    <script>
+        $(function () {
+            $.ajax(
+                {
+                    url: "../JudgeUserAttributes",
+                    type: "POST",
+                    dataType: "JSON",
+                    async: false,
+                    success: function (data) {
+                        $('#mid').val(data.user_status);
+                        // -1 为新用户， 其余为老用户
+                        if(data.user_status === -1)
+                        {
+                            alert("请先去办理会员卡");
+                            window.location.href = "./user_membercard.html";
+                        }
+                    }
+
+                });
+            //在增加教练课程信息中，点击课程时进行查询
+            $("#subject").change(function () {
+                var searchData = {};
+                searchData["course_id"]=$('#subject').val();
+                $.ajax(
+                    {
+                        url:"../../IdToCourseMessage",
+                        type:"POST",
+                        dataType:"JSON",
+                        data:JSON.stringify(searchData),
+                        async:false,
+                        success:function (data)
+                        {
+                            $('#dj').val(data.course_price); //单价
+                            var s = 1;
+                            $('#sl').val(s); //数量
+                            $('#zje').val(data.course_price*s); //总金额
+                        },
+                    });
+            })
+            //教练名下拉选项
+            $.ajax(
+                {
+                    url:"../../CoachQuery",
+                    type:"POST",
+                    dataType:"JSON",
+                    async:false,
+                    success:function (data)
+                    {
+                        var e=data["data"];
+                        $(e).each(function () {
+                            $('#coachid').append('<option value='+this.coach_id+' >'+this.coach_name+'</option>');
+                        })
+                    },
+                });
+
+            //课程名下拉选项
+            $.ajax(
+                {
+                    url:"../../CourseQuery",
+                    type:"POST",
+                    dataType:"JSON",
+                    async:false,
+                    success:function (data)
+                    {
+                        var e=data["data"];
+                        $(e).each(function () {
+                            $('#subjectid').append('<option value='+this.course_id+' >'+this.course_name+'</option>');
+                        })
+                    },
+                });
+
+            $('#table').bootstrapTable({
+                url:'../UserCoachCourseQuery?member_id='+ $('#mid').val() + '' ,
+                method:'get',
+                contentType:"application/x-www-form-urlencoded",
+
+                columns:[
+                    {
+                    field: 'p_id',
+                    title: '编号'
+                },
+                    {
+                        field: 'um.member_name',
+                        title: '会员名称'
+                    },
+                    {
+                        field: 'cm.coach_name',
+                        title: '教练名称'
+                    },{
+                        field: 'cs.course_name',
+                        title: '课程名称'
+                    },
+                    {
+                        field: 'purchase_num',
+                        title: '课程数量',
+
+                    },
+                    {
+                        field:'xx',title:'操作',
+                        formatter : function(value, data, index) {
+                            return "<a title='删除' href='javascript:del1("
+                                + data.p_id + ")'><span class='glyphicon glyphicon-arrow-right'>退订</span></a> | <a href='javascript:upd(" + data.p_id + ")'><span class='glyphicon glyphicon-arrow-right'>修改</span></a>";
+
+                        }
+                    }
+                ],
+                queryParamsType:'',
+                queryParams:queryParams,
+                height:360,
+                pageList:[5,10,15],
+                pageNumber:1,
+                pageSize:5,
+                pagination:true,
+                sidePagination:'client',
+                detailView:true,
+                onExpandRow:function(index, row, $detail){
+                    var aa=$detail.html("<table></table>").find('table');
+                    var idd=row.p_id;
+                    aa.bootstrapTable({
+                        url:'../../OneRowQuery?p_id='+idd+'',
+                        columns:[{
+                            field:'p_id',
+                            title:'编号',
+                        },
+                            {
+                                field: 'um.member_name',
+                                title: '会员名称'
+                            },
+                            {
+                                field: 'purchase_num',
+                                title: '数量'
+                            },{
+                                field: 'purchase_state',
+                                title: '状态',
+                                formatter:function (value,data,index) {
+                                    if(data.purchase_state===1){
+                                        return "购买";
+                                    }else{
+                                        return "赠送";
+                                    }
+                                }
+                            },{
+                                field:'purchase_money',
+                                title:'金额',
+                            },
+                            {
+                                field: 'purchase_note',
+                                title: '备注',
+
+                            },{
+                                field:'purchase_date',
+                                title:'开始日期',
+                            }
+                        ]
+                    }) ;
+                },
+            })
+        });
+
+
+        function kan1() {
+                    var searchData = {};
+                    searchData["member_id"]=$("#mid").val();
+                    $.ajax(
+                        {
+                            url:"../../IdToMemberMessage",
+                            type:"POST",
+                            dataType:"JSON",
+                            data:JSON.stringify(searchData),
+                            async:false,
+                            success:function (data)
+                            {
+                                $('#phone').text(data.member_phone);
+                                $('#kh').val(data.member_id);
+                                $('#xm').text(data.member_name);
+                                $('#type').text(data.card_type.type_name);
+                                $('#dqdate').text(data.expire_date);
+                                $('#hystatic').text(data.member_state);
+                                if(data.member_state===1){
+                                    $('#hystatic').text("正常");
+                                }else{
+                                    $('#hystatic').text("请续费");
+                                }
+                            },
+                        });
+
+
+        }
+        //输入会员编号查询
+        function kan2() {
+            $("#myModal3").modal("show");
+            $('#tb').bootstrapTable({
+                url:'../../MemberQuery',
+                method:'post',
+                contentType:"application/x-www-form-urlencoded",
+                columns:[{ radio:true
+                }, {
+                    field: 'member_id',
+                    title: '编号'
+                },{
+                    field: 'member_name',
+                    title: '会员名称'
+                },{
+                    field: 'card_type.type_name',
+                    title: '会员类型'
+                }
+                ],
+                queryParamsType:'',
+                queryParams:queryParams,
+                height:360,
+                pagination:true,
+                onDblClickRow: function (row){
+                    $('#myModal3').modal("hide");
+                }
+            })
+        }
+        //删除
+        function del1(id){
+            swal({
+                    title: "确定删除吗？",
+                    text: "您将无法恢复！",
+                    type: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#DD6B55",
+                    confirmButtonText: "确定删除！",
+                    cancelButtonText: "取消删除！",
+                    closeOnConfirm: false,
+                    closeOnCancel: false
+                },
+                function (isConfirm) {
+                    if (isConfirm) {
+                        var searchData = {};
+                        searchData["p_id"]=id;
+                        searchData["member_id"] = $('#mid').val();
+                        $.ajax(
+                            {
+                                url:"../../DelUserCoachCourseMessage",
+                                type:"POST",
+                                dataType:"JSON",
+                                data:JSON.stringify(searchData),
+                                async:false,
+                                success:function (data) {
+                                    $("#table").bootstrapTable("load", data);
+                                }
+                            });
+                        swal("删除！", "删除成功",
+                            "success");
+                    } else {
+                        swal("取消！", "您已取消删除)",
+                            "error");
+                    }
+                });
+        }
+        //获取当前的条件个页面页数即使更新值
+        function queryParams(){
+            var i={
+                "cm.coach_id":$('#coachid').val(),
+                "cs.course_id":$('#subjectid').val(),
+            };
+            return i;
+        }
+        //查询
+        function search(){
+            var searchData = {};
+            searchData["coach_id"]=$('#coachid').val();
+            searchData["course_id"]=$('#subjectid').val();
+            searchData["member_id"] = $('#mid').val();
+            $.ajax(
+                {
+                    url:"../../CoachCourseSearch",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(searchData),
+                    async:false,
+                    success:function (data)
+                    {
+                        $("#table").bootstrapTable('load',data) ;
+                    },
+                })
+        }
+        //下拉框赋值
+        function totian() {
+            $("#kh").val("");
+            $("#coach").val("");
+            $("#subject").val("");
+            $("#datett").val("");
+            $("#bz").val("");
+            $("#sl").val("") ;
+            $('#zje').val("") ;
+            $('#ssq').val("") ;
+            $('#phone').text("");
+            $('#kh').val("");
+            $('#xm').text("");
+            $('#type').text("");
+            $('#dqdate').text("");
+            $('#hystatic').text("");
+            $.ajaxSettings.async = false;
+            $.post("../../CoachQuery",{},function (data) {
+                var e = data["data"];
+                var ss = "";
+                var ssss = "";
+                var sss = "<option value='-1'>" + "--请选择--" + "</option>";
+                $(e).each(function () {
+                    /*$('#coach').append('<option value='+this.coachId+' >'+this.coachName+'</option>');*/
+                    ss += "<option value='" + this.coach_id + "'>" + "✨" + this.coach_name + "</option>";
+                    ssss = sss + ss;
+                    $('#coach').html(ssss);
+                })
+            });
+            $.post("../../CourseQuery",{},function (data) {
+                var e = data["data"];
+                var tt ="";
+                var tttt="";
+                var ttt="<option value='-1'>"+"--请选择--"+"</option>";
+                $(e).each(function () {
+                    /* $('#subject').append('<option value='+this.subId+' >'+this.subname+'</option>');*/
+                    tt += "<option value='"+this.course_id+"'>"+"💕"+this.course_name+"</option>";
+                    tttt=ttt+tt;
+                    $('#subject').html(tttt);
+                })
+            })
+        }
+        //添加
+        function save(){
+            if(!validateAdd()){
+                return;
+            }
+            //接收数据
+            var hyid=$("#kh").val();
+            var jlid = $("#coach").val();
+            var kcid = $("#subject").val();
+            var date= $("#datett").val();
+            var state = 1;
+            var remark =$("#bz").val() ;
+            var count =$('#sl').val() ;
+            var countprice =$("#zje").val() ;
+            var realprice =$('#ssq').val() ;
+            $("#myModal").modal("hide") ;
+
+            var returnData = {};
+            returnData["coach_id"]=jlid;
+            $.ajax(
+                {
+                    url:"../../IdToCoachMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        if(data.coach_state===0)
+                        {
+                            var returnData = {};
+                            returnData["member_id"]=hyid;
+                            returnData["coach_id"]=jlid;
+                            returnData["course_id"]=kcid;
+                            returnData["purchase_num"]=count;
+                            returnData["purchase_date"]=date;
+                            returnData["purchase_state"]=state;
+                            returnData["purchase_note"]=remark;
+                            $.ajax(
+                                {
+                                    url:"../../AddUserCoachCourseMessage",
+                                    type:"POST",
+                                    dataType:"JSON",
+                                    data: JSON.stringify(returnData),
+                                    async:false,
+                                    success:function (data) {
+                                        $("#table").bootstrapTable("load",data) ;
+                                    }
+                                });
+                            swal("添加！", "添加私教课程成功",
+                                "success");
+                        }else{
+                            swal("失败！", "此教练正休假或已离职",
+                                "error");
+                        }
+                    },
+                })
+        }
+
+        function validateAdd() {
+            $("#kh").parent().find("span").remove();
+            $("#coach").parent().find("span").remove();
+            $("#datett").parent().find("span").remove();
+            $("#subject").parent().find("span").remove();
+            $("#sl").parent().find("span").remove();
+            $("#ssq").parent().find("span").remove();
+
+
+            var kh = $("#kh").val().trim();
+            if(kh == null || kh == ""){
+                $("#kh").parent().append("<span style='color:red'>请选择会员卡号</span>");
+                return false;
+            }
+
+            var coach = $("#coach").val().trim();
+            if(coach==-1){
+                $("#coach").parent().append("<span style='color:red'>请选择教练姓名</span>");
+                return false;
+            }
+
+            var datett = $("#datett").val().trim();
+            if(datett == null || datett == ""){
+                $("#datett").parent().append("<span style='color:red'>请选择购买日期</span>");
+                return false;
+            }
+
+            var subject = $("#subject").val().trim();
+            if(subject==-1){
+                $("#subject").parent().append("<span style='color:red'>请选择项目名称</span>");
+                return false;
+            }
+
+
+
+            var sl = $("#sl").val().trim();
+            if(sl == null || sl == ""){
+                $("#sl").parent().append("<span style='color:red'>请填写数量</span>");
+                return false;
+            }
+
+            if(!(/^[1-9]\d*$/.test(sl))){
+                $("#sl").parent().append("<span style='color:red'>须为正整数</span>");
+                return false;
+            }
+
+            var ssq = $("#ssq").val().trim();
+            if(ssq == null || ssq == ""){
+                $("#ssq").parent().append("<span style='color:red'>请填写实收钱</span>");
+                return false;
+            }
+
+            if(!(/^[0-9,.]*$/.test(ssq))){
+                $("#ssq").parent().append("<span style='color:red'>实收钱只能为正整数或小数</span>");
+                return false;
+            }
+
+
+            return true;
+        };
+
+        //修改赋值 p_id
+        function upd(id){
+            $("#myModal2").modal("show");
+            $('#id').val(id);
+
+            $.ajax(
+                {
+                    url:'../../OneRowQuery?p_id='+id+'',
+                    type:"GET",
+                    dataType:"JSON",
+                    async:false,
+                    success:function (data) {
+                        $("#hykh").text(data[0].um.member_id);
+                        $("#hyxm").text(data[0].um.member_name);
+                        $("#yssj").text(data[0].cm.coach_name);
+
+                        $.post("../../CoachQuery",{},function (data) {
+                            var e=data["data"];
+                            var tt ="";
+                            var tttt="";
+                            var ttt="<option value='-1'>"+"--请选择--"+"</option>";
+                            $(e).each(function () {
+                                tt += "<option value='"+this.coach_id+"'>"+"✨"+this.coach_name+"</option>";
+                                tttt=ttt+tt;
+                                $('#xgcoach').html(tttt);
+                            })
+                        })
+                    }
+                });
+        }
+        //修改
+        function upd1() {
+            if(!validateUpd()){
+                return;
+            }
+            var returnData = {};
+            returnData["p_id"] =  $('#id').val();
+            returnData["coach_id"] = $("#xgcoach").val();
+            returnData["member_id"] = $("#mid").val();
+            $("#myModal2").modal("hide") ;
+            $.ajax(
+                {
+                    url:"../../UpdateUserCoachCourseMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data) {
+                        $("#table").bootstrapTable("load",data) ;
+                        swal("修改！", "修改成功",
+                            "success");
+                    }
+                });
+
+        }
+
+        function validateUpd() {
+
+            $("#xgcoach").parent().find("span").remove();
+
+            var xgcoach = $("#xgcoach").val().trim();
+            if(xgcoach==-1){
+                $("#xgcoach").parent().append("<span style='color:red'>请选择变更私教</span>");
+                return false;
+            }
+
+            return true;
+        }
+
+
+        function zql() {
+            var jine=$('#zje').val();
+            var ssjine=$('#ssq').val();
+            var zhao=ssjine-jine;
+            $('#zl').val(zhao);
+        }
+
+        function slChange() {
+            var sl = $('#sl').val();
+            var dj = $('#dj').val();
+            var s = sl * dj;
+            $('#zje').val(s);
+        }
+
+    </script>
+
+
+</head>
+<body >
+<header class="header">
+    <nav class="navbar navbar-static-top">
+        <a href="index.html" class="logo">
+            <!-- Add the class icon to your logo image or logo icon to add the margining -->
+            <img src="img/logo.png" alt="image not found">
+        </a>
+        <!-- Header Navbar: style can be found in header-->
+        <!-- Sidebar toggle button-->
+        <!-- Sidebar toggle button-->
+        <div>
+            <a href="#" class="navbar-btn sidebar-toggle" data-toggle="offcanvas" role="button"> <i
+                    class="fa fa-fw fa-navicon"></i>
+            </a>
+        </div>
+
+    </nav>
+</header>
+<div class="wrapper row-offcanvas row-offcanvas-left">
+    <aside class="left-side sidebar-offcanvas">
+        <!-- sidebar: style can be found in sidebar-->
+        <section class="sidebar">
+            <div id="menu" role="navigation">
+                <div class="nav_profile">
+                    <div class="media profile-left">
+                        <a class="pull-left profile-thumb" href="./index.html">
+                            <img src="img/authors/avatar1.jpg" class="img-circle" alt="User Image">
+                        </a>
+                        <div class="content-profile">
+                            <h4 class="media-heading">Welcome !</h4>
+                            <span class="text-default">User</span>
+                        </div>
+                    </div>
+                </div>
+                <ul class="navigation">
+
+                    <li class="menu-dropdown">
+                        <a href="./index.html">
+                            <i class="text-primary menu-icon fa fa-sitemap"></i>
+                            <span class="mm-text">桌面</span>
+                        </a>
+
+                    </li>
+
+                    <li class="menu-dropdown">
+                        <a href="#">
+                            <i class="text-primary menu-icon fa fa-sitemap"></i>
+                            <span class="mm-text">个人中心</span>
+                            <span class="fa fa-angle-down pull-right"></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li>
+                                <a href="user_message.html">
+                                    <i class="text-primary fa fa-fw fa-sitemap"></i> 个人信息
+                                </a>
+                                <a href="user_upPadsswd.html">
+                                    <i class="text-primary fa fa-fw fa-sitemap"></i> 修改密码
+
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="menu-dropdown">
+                        <a href="#">
+                            <i class="text-primary menu-icon fa fa-sitemap"></i>
+                            <span class="mm-text">会员卡</span>
+                            <span class="fa fa-angle-down pull-right"></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li>
+                                <a href="./user_membercard.html">
+                                    <i class="text-primary fa fa-fw fa-sitemap"></i> 会员卡类型
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="menu-dropdown">
+                        <a href="#">
+                            <i class="text-primary menu-icon fa fa-sitemap"></i>
+                            <span class="mm-text">课程信息</span>
+                            <span class="fa fa-angle-down pull-right"></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li>
+                                <a href="./user_course.html">
+                                    <i class="text-primary fa fa-fw fa-sitemap"></i> 课程浏览
+                                </a>
+
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="menu-dropdown">
+                        <a href="#">
+                            <i class="text-primary menu-icon fa fa-sitemap"></i>
+                            <span class="mm-text">教练信息</span>
+                            <span class="fa fa-angle-down pull-right"></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li>
+                                <a href="./user_coach.html">
+                                    <i class="text-primary fa fa-fw fa-sitemap"></i> 教学团队
+                                </a>
+                                <a href="./user_coachcourse.html">
+                                    <i class="text-primary fa fa-fw fa-sitemap"></i> 教练课程预约
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="menu-dropdown">
+                        <a href="#">
+                            <i class="text-primary menu-icon fa fa-sitemap"></i>
+                            <span class="mm-text">器材信息</span>
+                            <span class="fa fa-angle-down pull-right"></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li>
+                                <a href="./user_equipment.html">
+                                    <i class="text-primary fa fa-fw fa-sitemap"></i> 器材浏览
+                                </a>
+                            </li>
+                            <li>
+                                <a href="./user_orderequip.html">
+                                    <i class="text-primary fa fa-fw fa-sitemap"></i> 器材预约
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="menu-dropdown">
+                        <a href="#">
+                            <i class="text-primary menu-icon fa fa-sitemap"></i>
+                            <span class="mm-text">学习园地</span>
+                            <span class="fa fa-angle-down pull-right"></span>
+                        </a>
+                        <ul class="sub-menu">
+                            <li>
+                                <a href="./user_study.html">
+                                    <i class="text-primary fa fa-fw fa-sitemap"></i> 知识学习
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+
+                    <!-- <li class="menu-dropdown">
+                         <a href="#">
+                             <i class="text-primary menu-icon fa fa-sitemap"></i>
+                             <span class="mm-text">Menu Levels</span>
+                             <span class="fa fa-angle-down pull-right"></span>
+                         </a>
+                         <ul class="sub-menu">
+                             <li>
+                                 <a href="#">
+                                     <i class="text-primary fa fa-fw fa-sitemap"></i> Level 1
+                                     <span class="fa arrow"></span>
+                                 </a>
+                                 <ul class="sub-menu sub-submenu">
+                                     <li>
+                                         <a href="#">
+                                             <i class="text-primary fa fa-fw fa-sitemap"></i> Level 2
+                                         </a>
+                                     </li>
+                                     <li>
+                                         <a href="#">
+                                             <i class="text-success fa fa-fw fa-sitemap"></i> Level 2
+                                         </a>
+                                     </li>
+                                     <li>
+                                         <a href="#">
+                                             <i class="text-info fa fa-fw fa-sitemap"></i> Level 2
+                                             <span class="fa arrow"></span>
+                                         </a>
+                                         <ul class="sub-menu sub-submenu">
+                                             <li>
+                                                 <a href="#">
+                                                     <i class="text-primary fa fa-fw fa-sitemap"></i> Level 3
+                                                 </a>
+                                             </li>
+                                             <li>
+                                                 <a href="#">
+                                                     <i class="text-success fa fa-fw fa-sitemap"></i> Level 3
+                                                 </a>
+                                             </li>
+                                             <li>
+                                                 <a href="#">
+                                                     <i class="text-info fa fa-fw fa-sitemap"></i> Level 3
+                                                     <span class="fa arrow"></span>
+                                                 </a>
+                                                 <ul class="sub-menu sub-submenu">
+                                                     <li>
+                                                         <a href="#">
+                                                             <i class="text-primary fa fa-fw fa-sitemap"></i> Level 4
+                                                         </a>
+                                                     </li>
+                                                     <li>
+                                                         <a href="#">
+                                                             <i class="text-success fa fa-fw fa-sitemap"></i> Level 4
+                                                         </a>
+                                                     </li>
+                                                     <li>
+                                                         <a href="#">
+                                                             <i class="text-info fa fa-fw fa-sitemap"></i> Level 4
+                                                             <span class="fa arrow"></span>
+                                                         </a>
+                                                         <ul class="sub-menu sub-submenu">
+                                                             <li>
+                                                                 <a href="#">
+                                                                     <i class="text-primary fa fa-fw fa-sitemap"></i> Level 5
+                                                                 </a>
+                                                             </li>
+                                                             <li>
+                                                                 <a href="#">
+                                                                     <i class="text-success fa fa-fw fa-sitemap"></i> Level 5
+                                                                 </a>
+                                                             </li>
+                                                             <li>
+                                                                 <a href="#">
+                                                                     <i class="text-danger fa fa-fw fa-sitemap"></i> Level 5
+                                                                 </a>
+                                                             </li>
+                                                         </ul>
+                                                     </li>
+                                                 </ul>
+                                             </li>
+                                             <li>
+                                                 <a href="#">
+                                                     <i class="text-danger fa fa-fw fa-sitemap"></i> Level 4
+                                                 </a>
+                                             </li>
+                                         </ul>
+                                     </li>
+                                     <li>
+                                         <a href="#">
+                                             <i class="text-danger fa fa-fw fa-sitemap"></i> Level 2
+                                         </a>
+                                     </li>
+                                 </ul>
+                             </li>
+                             <li>
+                                 <a href="#">
+                                     <i class="text-success fa fa-fw fa-sitemap"></i> Level 1
+                                 </a>
+                             </li>
+                             <li>
+                                 <a href="#">
+                                     <i class="text-info fa fa-fw fa-sitemap"></i> Level 1
+                                     <span class="fa arrow"></span>
+                                 </a>
+                                 <ul class="sub-menu sub-submenu">
+                                     <li>
+                                         <a href="#">
+                                             <i class="text-primary fa fa-fw fa-sitemap"></i> Level 2
+                                         </a>
+                                     </li>
+                                     <li>
+                                         <a href="#">
+                                             <i class="text-success fa fa-fw fa-sitemap"></i> Level 2
+                                         </a>
+                                     </li>
+                                     <li>
+                                         <a href="#">
+                                             <i class="text-info fa fa-fw fa-sitemap"></i> Level 2
+                                         </a>
+                                     </li>
+                                 </ul>
+                             </li>
+                         </ul>
+                     </li>
+                     <li class="menu-dropdown">
+                         <a href="#">
+                             <i class="text-success menu-icon fa fa-fw fa-question-circle"></i>
+                             <span class="mm-text">FAQ</span>
+                             <span class="fa fa-angle-down pull-right"></span>
+                         </a>
+                         <ul class="sub-menu">
+                             <li>
+                                 <a href="faq.html">
+                                     <i class="text-primary fa fa-fw fa-question-circle"></i> FAQ
+                                 </a>
+                             </li>
+                             <li>
+                                 <a href="add_faq.html">
+                                     <i class="text-success fa fa-fw fa-question"></i> Add Faq
+                                 </a>
+                             </li>
+                         </ul>
+                     </li> -->
+                </ul>
+                <!-- / .navigation -->
+            </div>
+            <!-- menu -->
+        </section>
+        <!-- /.sidebar -->
+    </aside>
+    <aside class="right-side">
+        <input type="hidden" id="mid">
+        <!-- <%--    //查询--%> -->
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <form class="form-inline">
+                    教练名称:
+                    <select id="coachid" class="form-control">
+                        <option value="-1">请选择</option>
+                    </select>
+                    课程编号:
+                    <select id="subjectid" class="form-control">
+                        <option value="-1">请选择</option>
+                    </select>
+                    <button onclick="search()" type="button" class="btn" >查询</button>
+                    <button type="button" class="btn"  style="float: right;" data-toggle="modal" data-target="#myModal" onclick="totian()"><span class="glyphicon glyphicon-plus"></span>添加会员私教课程</button>
+
+                </form>
+            </div>
+
+        </div>
+        <!-- <%--//页面数据展示--%> -->
+        <div>
+            <table id="table"></table>
+        </div>
+        <div class="modal fade" id="myModal">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel">增加教练课程信息</h4>
+                    </div>
+                    <div class="modal-body">
+                        <!-- form开始 -->
+                        <form>
+                            <label>会员信息</label>
+                            <table style="margin-top:10px;border:1px solid #ccc;padding:20px;margin-bottom:20px;">
+                                <tr style="margin: 20px; margin-left: 20px;padding: 20px;padding-left: 20px">
+                                    <td style="width:450px;padding-left: 20px"><label style="float: left;margin-top: 10px">会员卡号：</label><input type="text" id="kh" style="margin-top: 10px;width: 250px" class="form-control" readonly="readonly" >
+                                        <a title='查询' onclick="kan1()" href="#" style="float: right;margin-top: -30px;margin-right: 20px" class='glyphicon glyphicon-search'></a>
+                                    </td>
+                                    <td style="width:300px"><label style="float: left;margin-top: 10px">会员姓名：</label><span style="display: inline-block;margin-top: 10px" id="xm"></span></td>
+                                    <td  style="width:300px"><label style="float: left;margin-top: 10px">会员电话：</label><span style="display: inline-block;margin-top: 10px" id="phone"></span></td>
+                                </tr>
+                                <tr style="margin-top: 20px; margin-left: 20px;padding: 20px;height: 40px;padding-left: 20px">
+                                    <td  style="width:450px;padding-left: 20px"><label style="float: left;margin-top: 10px">到期时间：</label><span style="display: inline-block;margin-top: 10px" id="dqdate"></span></td>
+                                    <td style="width:300px"><label style="float: left;margin-top: 10px">会员类型：</label><span style="display: inline-block;margin-top: 10px" id="type"></span></td>
+                                    <td  style="width:300px"><label style="float: left;margin-top: 10px">会员状态：</label><span style="display: inline-block;margin-top: 10px" id="hystatic"></span> </td>
+                                </tr>
+                            </table>
+                            <label>购买私教</label>
+                            <table style="margin-top:10px;border:1px solid #ccc;padding:20px;margin-bottom:20px;">
+                                <tr style="margin: 20px; margin-left: 20px;padding: 20px;">
+                                    <td style="width:450px;padding-left: 20px"><label style="float: left;margin-top: 10px">教练姓名：</label>
+                                        <select style="margin-top: 10px;width: 300px" id="coach" style="margin-top: 10px" class="form-control">
+
+                                        </select>
+                                    </td>
+                                    <td style="width:450px"><label style="float: left;margin-top: 10px">购买日期：</label><input type="date" id="datett" style="margin-top: 10px;width: 350px" class="form-control" ></td>
+                                </tr>
+                                <tr style="margin: 20px; margin-left: 20px;padding: 20px;">
+                                    <td style="width:400px;padding-left: 20px"><label style="float: left;margin-top: 10px">课程名称：</label>
+                                        <select style="margin-top: 10px;width: 300px" id="subject" class="form-control">
+
+                                        </select>
+                                    </td>
+                                    <td style="width:500px"><label style="float: left;margin-top: 10px">单&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 价：</label><input type="text" id="dj" readonly style="float: left;margin-top: 10px;margin-right:20px;width: 125px" class="form-control" >
+                                        <label style="float: left;margin-top: 10px">数&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;量：</label><input type="text" id="sl" value="1" style="float: left;margin-top: 10px;width: 125px" oninput="slChange()" class="form-control" >
+                                    </td>
+                                </tr>
+                                <tr style="margin: 20px; margin-left: 20px;padding: 20px;">
+                                    <td colspan="2" style="width:900px;padding-left: 20px"><label style="float: left;margin-top: 10px">备&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 注：</label>
+                                        <input type="text" id="bz" style="margin-top: 10px;width: 740px" class="form-control" >
+                                    </td>
+                                </tr>
+                                <tr style="margin: 20px; margin-left: 20px;padding: 20px;">
+                                    <td colspan="2" style="width:900px;padding-left: 20px"><input type="text" style="float:right;margin-top: 10px;margin-right:30px;width: 100px" id="zje" class="form-control" readonly="readonly"><label style="float: right;margin-top: 10px">总金额：</label>
+
+                                    </td>
+                                </tr>
+                                <tr style="margin: 20px; margin-left: 20px;padding: 20px;">
+                                    <td colspan="2" style="width:900px;padding-left: 20px"><input type="text" style="float:right;margin-top: 10px;margin-right:30px;width: 100px" id="ssq"  oninput="zql()" class="form-control" ><label style="float: right;margin-top: 10px">实收钱：</label>
+
+                                    </td>
+                                </tr>
+                                <tr style="margin: 20px; margin-left: 20px;padding: 20px;margin-bottom: 30px">
+                                    <td colspan="2" style="width:900px;padding-left: 20px"><input type="text" style="float:right;margin-top: 10px;margin-right:30px;width: 100px" id="zl" class="form-control"  readonly="readonly"><label style="float: right;margin-top: 10px">找零：</label>
+
+                                    </td>
+                                </tr>
+                                <tr style="margin: 20px;padding: 20px;margin-bottom: 30px">
+
+                                </tr>
+
+                            </table>
+                        </form>
+                        &nbsp;
+                        <div class="modal-footer">
+                            <button type="button" class="btn" data-dismiss="modal">关闭</button>
+                            <button onclick="save()" id = "add" type="button" class="btn btn-primary">提交</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="myModal3">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- form开始 -->
+                        <table id="tb"></table>
+                        &nbsp;
+                        <div class="modal-footer">
+                            <button type="button" class="btn" data-dismiss="modal">关闭</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="myModal2">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel2">❤变更私教</h4>
+                    </div>
+                    <div class="modal-body">
+                        <!-- form开始 -->
+                        <form>
+                            <input type="hidden" id="id" name="id">
+                            <table  style="width: 90%;margin: 0px auto">
+                                <tr style="width: 100%">
+                                    <td style="width: 280px;height: 35px;">会员卡号：<span id="hykh"></span></td>
+                                    <td style="width:280px;height: 35px;">会员姓名：<span id="hyxm"></span></td>
+                                </tr>
+                                <tr style="width: 100%">
+                                    <td style="width: 280px;height: 35px;">原始私教：<span id="yssj"></span></td>
+                                    <td style="width: 280px;height: 35px;">变更私教：
+                                        <select style="width: 140px;float: right;margin-right: 30px" id="xgcoach"  class="form-control">
+                                            <option value="-1">--请选择--</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </table>
+                        </form>
+                        &nbsp;
+                        <div class="modal-footer">
+                            <button type="button" class="btn" data-dismiss="modal">关闭</button>
+                            <button onclick="upd1()"  type="button" class="btn btn-primary">修改</button>
+                        </div>
+                    </div>
+                </div>
+            </div></div>
+    </aside>
+</div>
+
+<script src="http://cdn.bootstrapmb.com/bootstrap/3.3.6/js/bootstrap.min.js" type="text/javascript"></script>
+<script src="js/custom_js/app.js" type="text/javascript"></script>
+<script src="js/custom_js/metisMenu.js" type="text/javascript"></script>
+<script src="vendors/holder/holder.js" type="text/javascript"></script>
+<!-- end of page level js -->
+<!-- begining of page level js -->
+<script src="vendors/vertical-timeline/js/main.js"></script>
+<script src="vendors/vertical-timeline/js/modernizr.js"></script>
+<script src="vendors/jasny-bootstrap/js/jasny-bootstrap.js" type="text/javascript"></script>
+<script src="vendors/x-editable/jquery.mockjax.js" type="text/javascript"></script>
+<script src="vendors/x-editable/bootstrap-editable.js" type="text/javascript"></script>
+<script src="js/custom_js/single_user.js" type="text/javascript"></script>
+<!-- end of page level js -->
+</body>
+</html>

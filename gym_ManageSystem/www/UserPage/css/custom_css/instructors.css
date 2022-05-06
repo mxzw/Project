@@ -1,0 +1,56 @@
+.ih-item.circle .img:before {
+  box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.6), 0 1px 2px rgba(0, 0, 0, 0.3);
+  -webkit-transition: all 0.35s ease-in-out;
+  -moz-transition: all 0.35s ease-in-out;
+  transition: all 0.35s ease-in-out;
+}
+.mart30{
+  margin-top: 30px;
+}
+.profile_view{
+  text-align: justify;
+  margin-top: 2%;  
+  line-height: 20px;
+}
+.left-side-bar-z-index{
+  z-index:1;
+}
+p{
+  color: #333333;
+  font-size: 12px;
+  line-height:20px;
+}
+.image_left_right_alignment{
+  padding-left:0;
+}
+@media (min-width:320px) and (max-width:1024px) {
+
+  .img-responsive-alignments {
+    padding: 20px;
+  }
+}
+  @media (min-width: 1024px) {
+
+    .left-to-right-margin{
+      margin-left: 28%;
+    }
+    .right-to-margin{
+      margin-left: 0;
+    }
+
+  }
+@media (min-width: 992px) and (max-width: 1024px) {
+  .right-to-margin{
+    margin-left: -8%;
+  }
+
+}
+@media (min-width: 768px) and (max-width: 992px) {
+  .left-to-right-margin{
+    margin-left: 28%;
+  }
+  .right-to-margin{
+    margin-left: 0;
+  }
+
+}

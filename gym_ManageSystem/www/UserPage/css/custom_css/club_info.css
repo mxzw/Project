@@ -1,0 +1,106 @@
+.pad-top {
+    padding-top: 15px;
+}
+
+.fileinput {
+    display: inline-block;
+    margin-bottom: -7px;
+}
+
+.nav-custom {
+    background: none;
+    margin-bottom: 20px;
+    border-bottom:3px solid #dddddd;
+}
+
+.nav-custom > li.active > a,
+.nav-custom > li.active > a:hover,
+.nav-custom > li.active > a:active,
+.nav-custom > li.active > a:focus {
+    border-bottom:3px solid #33a4d8;
+
+}
+.edi-css {
+    width: 100%;
+    height: 200px;
+    font-size: 13px;
+    border: 1px solid #dddddd;
+    padding: 10px;
+}
+
+.terms ul>li>a {
+    color: #33a4d8;
+}
+
+.terms ul>li>a:hover {
+    color: #65a800;
+}
+
+.image-alignment {
+    text-align: center;
+}
+
+.buttons_align {
+    text-align: center;
+}
+.fa-stack{
+    font-size: 17px;
+}
+.circle-fb
+{
+    color: #2E4D72;
+}
+.circle-ggl-plus
+{
+    color:#CC3731;
+}
+.circle-twitter
+{
+    color:#13B3CA;
+}
+.circle-youtube
+{
+    color:#D42428;
+}
+.thumbnail
+{
+    max-width: 200px;
+    max-height: 150px;
+}
+@media screen and (max-width:396px)
+{
+    .nav>li>a {
+        position: relative;
+        display: block;
+        padding: 11px 2px;
+    }
+    .nav-custom{
+        font-size: 11px;
+    }
+
+}
+strong{
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.nav-tabs>li {
+    float: left;
+    margin-bottom: -3px;
+}
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
+    color: #555;
+    background-color: #fff;
+    border-top: 0 solid #418bca;
+
+    cursor: default;
+    margin-top: -2px;
+}
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
+    color: #333333;
+    cursor: default;
+    background-color: #fff;
+    border-left:0;
+    border-right:0;
+
+}

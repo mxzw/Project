@@ -1,0 +1,565 @@
+
+
+<script src="../static/jquery-3.2.1.min.js">
+</script>
+<html>
+<head>
+    <title>器材列表</title>
+    <link rel="stylesheet" href="../static/bootstrap/css/bootstrap.css" />
+    <link rel="stylesheet" href="../static/table/bootstrap-table.min.css" />
+    <script type="text/javascript" src="../static/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../static/bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../static/table/bootstrap-table.js"></script>
+    <script type="text/javascript" src="../static/table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="../static/sweetalert/sweetalert.css" />
+    <script type="text/javascript" src="../static/sweetalert/sweetalert.min.js"></script>
+
+    <link rel="stylesheet" href="../static/date/bootstrap-datetimepicker.min.css" />
+    <script type="text/javascript" src="../static/date/Moment.js"></script>
+    <script type="text/javascript" src="../static/date/bootstrap-datetimepicker.min.js"></script>
+
+    <script type="text/javascript">
+
+        $(function () {
+            $.ajax(
+                {
+                    url: "../../GetUserAttributes",
+                    type: "GET",
+                    dataType: "JSON",
+                    async: false,
+                    success: function (data) {
+                        $('#uid').val(data.user_id);
+                    }
+                });
+
+            $('#table').bootstrapTable({
+                url:'../../UserStudyQuery',
+                columns:[
+                    {
+                        field:'study_id',
+                        title:'编号'
+                    }, {
+                        field:'study_title',
+                        title:'标题'
+                    },
+                    {
+                        field:'study_body',
+                        title:'详细内容'
+                    },
+                    {
+                        field:'xx',title:'操作',
+                        formatter : function(value, data, index) {
+                            return "<a title='删除' href='javascript:del("
+                                + data.study_id + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a href='javascript:upd1("+data.study_id+")' class='glyphicon glyphicon-pencil'></a>";
+                        }
+                    }
+                ],
+                method:'post',
+                contentType:"application/x-www-form-urlencoded",
+                queryParamsType:'',
+                queryParams:queryParams,
+                height:360,
+                pageList:[5,10,15],
+                pageNumber:1,
+                pageSize:5,
+                pagination:true,
+                sidePagination:'client',
+
+            });
+        })
+
+        //获取当前的条件个页面页数即使更新值
+        function queryParams(){
+            var i={
+                "id":$('#eqName').val(),
+            };
+            return i;
+        }
+
+        function upd1(id){
+            $("#myModal2").modal("show");
+            $('#id').val(id);
+            var returnData = {};
+            returnData["study_id"]=id;
+
+            $.ajax(
+                {
+                    url:"../../IdToUserStudyMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        // $("#table").bootstrapTable("load",data) ;
+                        $("#xgtitle").val(data.study_title);
+                        $("#xgbody").val(data.study_body);
+                    },
+                })
+        }
+
+        //查询
+        function chaxun(){
+
+            var searchData = {};
+            searchData["study_title"] =$('#eqname').val();
+
+
+            $.ajax(
+                {
+                    url:"../../UserStudyNameSearch",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(searchData),
+                    async:false,
+                    success:function (data)
+                    {
+                        $("#table").bootstrapTable('load',data) ;
+                    },
+                })
+        }
+
+        function del(eqId) {
+            var returnData = {};
+            returnData["study_id"] = eqId;
+            $("#exampleModal").modal("hide") ;
+            $.ajax(
+                {
+                    url: "../../DelUserStudyMessage",
+                    type: "POST",
+                    dataType: "JSON",
+                    data: JSON.stringify(returnData),
+                    async: false,
+                    success: function (data) {
+                        if (data != null) {
+                            $("#table").bootstrapTable('load', data);
+                            swal(
+                                {
+                                    title: "删除成功",
+                                    type: "success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        } else {
+                            swal(
+                                {
+                                    title: "删除失败",
+                                    type: "warning",
+                                    timer: 1500,
+                                    showConfirmButton: false
+
+                                }
+                            )
+                        }
+                    }
+                });
+        }
+
+        function upd(){
+            var returnData = {};
+            returnData["study_id"] =  $('#id').val();
+            returnData["study_title"] = $("#xgtitle").val();
+            returnData["study_body"]= $("#xgbody").val();
+            returnData["user_id"] = $("#uid").val();
+            $("#myModal2").modal("hide") ;
+
+            $.ajax(
+                {
+                    url:"../../UpdateUserStudyMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        if(data != null){
+                            $("#table").bootstrapTable('load',data) ;
+                            swal(
+                                {
+                                    title:"修改成功",
+                                    type:"success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }else{
+                            swal(
+                                {
+                                    title:"修改失败",
+                                    type:"warning",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }
+                    },
+                });
+        }
+
+
+        //添加
+        function insert() {
+            $("#upname").val("");
+            $("#uptext").val("");
+            $('#exampleModal').modal('show');
+
+        }
+
+        function selfArticle()
+        {
+            $("#myModal3").modal("show");
+            $('#tb').bootstrapTable({
+                url:'../../UserStudyQuery?user_id=' + $('#uid').val() + " ",
+                method:'get',
+                contentType:"application/x-www-form-urlencoded",
+                columns:[
+                    {
+                        field:'study_id',
+                        title:'编号'
+                    }, {
+                        field:'study_title',
+                        title:'标题'
+                    },
+                    {
+                        field:'study_body',
+                        title:'详细内容'
+                    },
+                    {
+                        field:'xx',title:'操作',
+                        formatter : function(value, data, index) {
+                            return "<a title='删除' href='javascript:delx("
+                                + data.study_id + ")'><span class='glyphicon glyphicon-trash'></span></a> | <a href='javascript:updx("+data.study_id+")' class='glyphicon glyphicon-pencil'></a>";
+                        }
+                    }
+                ],
+                queryParamsType:'',
+                queryParams:queryParams,
+                height:360,
+                pagination:true,
+                sidePagination:'client',
+
+            })
+
+        }
+        function delx(id)
+        {
+            var returnData = {};
+            returnData["study_id"] = id;
+            $.ajax(
+                {
+                    url: "../../DelUserStudyMessage",
+                    type: "POST",
+                    dataType: "JSON",
+                    data: JSON.stringify(returnData),
+                    async: false,
+                    success: function (data) {
+                        if (data != null) {
+                            $("#table").bootstrapTable('load', data);
+                            swal(
+                                {
+                                    title: "删除成功",
+                                    type: "success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                            $('#tb').bootstrapTable('refresh');
+                        } else {
+                            swal(
+                                {
+                                    title: "删除失败",
+                                    type: "warning",
+                                    timer: 1500,
+                                    showConfirmButton: false
+
+                                }
+                            )
+                        }
+                    }
+                });
+        }
+        function updx(id)
+        {
+            $("#myModal4").modal("show");
+            $('#sid').val(id);
+            var returnData = {};
+            returnData["study_id"]=id;
+
+            $.ajax(
+                {
+                    url:"../../IdToUserStudyMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        // $("#table").bootstrapTable("load",data) ;
+                        $("#xg2title").val(data.study_title);
+                        $("#xg2body").val(data.study_body);
+                    },
+                })
+        }
+
+        function upd2()
+        {
+            var returnData = {};
+            returnData["study_id"] =  $('#sid').val();
+            returnData["study_title"] = $("#xg2title").val();
+            returnData["study_body"]= $("#xg2body").val();
+            returnData["user_id"] = $("#uid").val();
+            $("#myModal4").modal("hide") ;
+
+            $.ajax(
+                {
+                    url:"../../UpdateUserStudyMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        if(data != null){
+                            $("#table").bootstrapTable('load',data) ;
+                            swal(
+                                {
+                                    title:"修改成功",
+                                    type:"success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                            $('#tb').bootstrapTable('refresh')
+
+                        }else{
+                            swal(
+                                {
+                                    title:"修改失败",
+                                    type:"warning",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }
+                    },
+                });
+        }
+
+        function tianjia() {
+            if(!validateAdd()){
+                return;
+            }
+            var returnData = {};
+            returnData["study_title"]=$('#upname').val();
+            returnData["study_body"] =$('#uptext').val();
+            returnData["user_id"] =$('#uid').val();
+            $("#exampleModal").modal("hide") ;
+            $.ajax(
+                {
+                    url:"../../AddUserStudyMessage",
+                    type:"POST",
+                    dataType:"JSON",
+                    data: JSON.stringify(returnData),
+                    async:false,
+                    success:function (data)
+                    {
+                        if(data != null){
+                            $("#table").bootstrapTable('load',data) ;
+                            swal(
+                                {
+                                    title:"添加成功",
+                                    type:"success",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }
+                        else{
+                            swal(
+                                {
+                                    title:"添加失败",
+                                    type:"warning",
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }
+                            )
+                        }
+                    },
+                });
+        }
+
+        function closemodel4()
+        {
+            $("#myModal4").modal("hide");
+            $("#myModal3").modal("show");
+        }
+
+        function validateAdd() {
+            $("#upname").parent().find("span").remove();
+            var upname = $("#upname").val().trim();
+            if(upname == null || upname == ""){
+                $("#upname").parent().append("<span style='color:red'>请输入文章名称</span>");
+                return false;
+            }
+
+            return true;
+        }
+        function refresh()
+        {
+
+            $('#tb').bootstrapTable('refresh')
+        }
+
+
+    </script>
+</head>
+<body background="../static/HTmoban/images/tongji4.jpg">
+
+<!-- <%--    //查询--%> -->
+<div class="panel panel-default">
+    <div class="panel-body">
+        <form class="form-inline">
+            <div  class="input-group input-daterange">
+                <label for="eqname" class="control-label">器材名称:</label>
+                <input id="eqname" type="text" class="form-control">
+            </div>
+            <input type="hidden" id="uid">
+            <button onclick="chaxun()" type="button" class="btn btn-default" style="margin-top: 20px" >查询</button>
+            <button onclick="selfArticle()" type="button" class="btn btn-default" style="margin-top: 20px" >查看自己发布的文章</button>
+            <button type="button" class="btn btn-default" style="float: right; margin-top: 20px" data-toggle="modal" onclick="insert()"><span class="glyphicon glyphicon-plus"></span>添加文章</button>
+        </form>
+    </div>
+
+</div>
+
+<!--表格-->
+<table id="table"></table>
+
+<!-- <%--修改--%> -->
+<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="updateModalLabel">文章添加</h4>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label class="control-label">标题:</label>
+                        <input type="text" class="form-control" id="upname">
+                    </div>
+                    <div class="form-group">
+                        <label  class="control-label">详细内容:</label>
+                        <input type="text" class="form-control" id="uptext">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="tianjia()">添加</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="myModal2">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="myModalLabel2">❤修改文章</h4>
+            </div>
+            <div class="modal-body">
+                <! -- form开始
+                <form>
+                    <input type="hidden" id="id" name="id">
+                    <div class="form-group">
+                        <label for="xgtitle" class="col-sm-4 control-label"style="margin-top: 10px">标题</label>
+                        <div class="col-sm-8">
+                            <input type="text"style="margin-top: 10px" class="form-control" id="xgtitle" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="xgbody" class="col-sm-4 control-label"style="margin-top: 10px">详细内容</label>
+                        <div class="col-sm-8">
+                            <input type="text"style="margin-top: 10px" class="form-control" id="xgbody" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
+                        </div>
+                    </div>
+                </form>
+                &nbsp;
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button onclick="upd()"  type="button" class="btn btn-primary">修改</button>
+                </div>
+            </div>
+        </div>
+    </div></div>
+
+
+    <div class="modal fade" id="myModal3">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- form开始 -->
+                    <table id="tb"></table>
+                    &nbsp;
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" onclick="refresh()">刷新</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="myModal4">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"
+                                aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        <h4 class="modal-title" id="myModalLabel4">❤修改文章</h4>
+                    </div>
+                    <div class="modal-body">
+                        <! -- form开始
+                        <form>
+                            <input type="hidden" id="sid" name="id">
+                            <div class="form-group">
+                                <label for="xgtitle" class="col-sm-4 control-label"style="margin-top: 10px">标题</label>
+                                <div class="col-sm-8">
+                                    <input type="text"style="margin-top: 10px" class="form-control" id="xg2title" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="xgbody" class="col-sm-4 control-label"style="margin-top: 10px">详细内容</label>
+                                <div class="col-sm-8">
+                                    <input type="text"style="margin-top: 10px" class="form-control" id="xg2body" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
+                                </div>
+                            </div>
+                        </form>
+                        &nbsp;
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" onclick="closemodel4()">关闭</button>
+                            <button onclick="upd2()"  type="button" class="btn btn-primary">修改</button>
+                        </div>
+                    </div>
+                </div>
+            </div></div>
+    </div>
+
+</body>
+</html>
