@@ -24,7 +24,7 @@
                 url:'../../CoachQuery',
                 method:'post',
                 contentType:"application/x-www-form-urlencoded",
-                columns:[{ checkbox:true
+                columns:[{
                 }, {
                     field: 'coach_id',
                     title: '编号'
@@ -151,7 +151,6 @@
                         $("#table").bootstrapTable('load',data) ;
                     },
                 })
-
         }
 
 
@@ -169,6 +168,7 @@
             returnData["coach_sex"] = $('input[name="sex"]:checked').val();
             returnData["coach_educateAge"] =$("#jl").val() ;
             returnData["coach_salary"] =$('#xz').val() ;
+            returnData["coach_desc"] =$('#desc').val() ;
             $("#myModal").modal("hide") ;
 
             $.ajax(
@@ -281,6 +281,7 @@
             $("#date").val("");
             $("#jl").val("") ;
             $('#xz').val("") ;
+            $('#desc').val("") ;
         }
         function upd1(id){
             $("#myModal2").modal("show");
@@ -305,6 +306,7 @@
                         $('#xgjl').val(data.coach_educateAge);
                         $('#xgxz').val(data.coach_salary);
                         $('#xgsex').val(data.coach_sex);
+                        $('#xdesc').val(data.coach_desc);
                     },
                 })
         }
@@ -324,6 +326,7 @@
             returnData["coach_sex"] = $('#xgsex').val();
             returnData["coach_educateAge"]= $('#xgjl').val();
             returnData["coach_salary"] = $('#xgxz').val();
+            returnData["coach_desc"] = $('#xdesc').val();
             $("#myModal2").modal("hide") ;
 
             $.ajax(
@@ -500,6 +503,12 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <label for="desc" class="col-sm-4 control-label"style="margin-top: 10px">简介</label>
+                        <div class="col-sm-8">
+                            <input type="text"style="margin-top: 10px" class="form-control" id="desc" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label class="col-sm-4 control-label">性别</label>
                         <div class="col-sm-8">
                             <div class="radio radio-transparent">
@@ -580,6 +589,12 @@
                         <label for="name" class="col-sm-4 control-label"style="margin-top: 10px">薪资</label>
                         <div class="col-sm-8">
                             <input type="text"style="margin-top: 10px" class="form-control" id="xgxz" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="name" class="col-sm-4 control-label"style="margin-top: 10px">简介</label>
+                        <div class="col-sm-8">
+                            <input type="text"style="margin-top: 10px" class="form-control" id="xdesc" parsley-trigger="change" parsley-required="true" parsley-minlength="4" parsley-type="email" parsley-validation-minlength="1">
                         </div>
                     </div>
                     <div class="form-group">

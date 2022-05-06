@@ -7,6 +7,8 @@
 #include "httplib.h"
 #include "ManageDB.hpp"
 #include "Session.hpp"
+#include "User.hpp"
+#include "UserStudy.hpp"
 
 //这三个类在CoachCourse中包含了
 //#include "Member.hpp"
@@ -22,7 +24,7 @@ using namespace httplib;
 class GymManageSystem
 {
   public:
-    GymManageSystem():md_(nullptr),all_sess_(nullptr),mb_(nullptr),ch_(nullptr),cs_(nullptr),eq_(nullptr),cc_(nullptr)
+    GymManageSystem():md_(nullptr),all_sess_(nullptr),mb_(nullptr),ch_(nullptr),cs_(nullptr),eq_(nullptr),cc_(nullptr),us_(nullptr),uy_(nullptr)
     {
     }
     ~GymManageSystem()
@@ -41,6 +43,10 @@ class GymManageSystem
         delete eq_;
       if(cc_)
         delete cc_;
+      if(us_)
+        delete us_;
+      if(uy_)
+        delete uy_;
     }
 
     /*
@@ -81,6 +87,12 @@ class GymManageSystem
         return -1;
       cc_ = new CoachCourse(mb_,ch_,cs_);
       if(cc_ == nullptr)
+        return -1;
+      us_ = new User(); 
+      if(us_ == nullptr)
+        return -1;
+      uy_ = new UserStudy(); 
+      if(uy_ == nullptr)
         return -1;
 
       return 0;
@@ -151,11 +163,12 @@ class GymManageSystem
 
          });
     //验证是否为管理员用户
-    http_svr_.Get("/GetUserAttributes",[=](const Request& req,Response res)
+    http_svr_.Get("/GetUserAttributes",[=](const Request& req,Response& res)
         {
           int user_id = this->all_sess_->CheckSessionInfo(req);
           Json::Value res_value;
           res_value["user_attributes"] = this->md_->GetUserAttributes(user_id);
+          res_value["user_id"] = user_id;
           res.body = this->Serializa(res_value);
           res.set_header("content-Type","application");
           
@@ -645,11 +658,263 @@ class GymManageSystem
 
           res.set_header("content-Type","application/json;charset=UTF-8");
         });
+    http_svr_.Post("/GetUserMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          int user_id = stoi(req_value["user_id"].asString());
 
+          Json::Value res_value;
+          if(user_id <= 0)
+          {
+            //没有办理会员卡
+            res_value["status"] = 0;
+            res_value["email"] = this->us_->GetUserEmail(md_,user_id);
+          }
+          else{
+            //办理过会员卡
+            res_value["status"] = 1;
+            this->us_->GetUserMessage(md_,res_value,user_id);
+          }
+          res.body = this->Serializa(res_value);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
 
+    http_svr_.Post("/UpdateUserMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+
+          Json::Value res_value;
+          if(!this->us_->UpdateUserMessage(md_,req_value))
+          {
+            res_value["status"] = 0;
+          }
+          else
+            res_value["status"] = 1;
+
+          res.body = this->Serializa(res_value);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //判断当前用户有没有办卡（新老用户判断）
+    http_svr_.Post("/JudgeUserAttributes",[=](const Request& req,Response& res)
+        {
+          int user_id = this->all_sess_->CheckSessionInfo(req);
+          Json::Value res_value;
+          res_value["user_status"] = this->us_->JudgeUserStatus(md_,user_id);
+          res.body = this->Serializa(res_value);
+          res.set_header("content-Type","application");
+
+        });
+    //新用户注册会员卡
+    http_svr_.Post("/AddUserMember",[=](const Request& req, Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+
+          Json::Value res_value;
+          res_value["status"] = this->mb_->AddUserMember(md_,req_value);
+          res.body = this->Serializa(res_value);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    http_svr_.Get("/UserCoachCourseQuery",[=](const Request& req,Response& res)
+        {
+          int mid = -1;
+
+          if(req.has_param("member_id"))
+            mid =stoi(req.get_param_value("member_id"));
+
+          if(mid != -1)
+            res.body = this->cc_->CoachCourseMessageQuery(md_,mid);
+          else 
+            cout << "Get param not has p_id" << endl;
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //增加一个新的教练课程信息
+    http_svr_.Post("/AddUserCoachCourseMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          int mid = stoi(req_value["member_id"].asString());
+          if(!this->cc_->AddCoachCourseMessage(md_,req_value))
+            cout << "AddUserCoachCourseMessage failed ! " << endl;
+          else 
+            res.body = this->cc_->CoachCourseMessageQuery(md_,mid);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //根据id删除教练课程信息
+    http_svr_.Post("/DelUserCoachCourseMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          int mid = stoi(req_value["member_id"].asString());
+          if(!this->cc_->DelCoachCourseMessage(md_,req_value))
+            cout << "DelUserCoachCourseMessage failed ! " << endl;
+          else 
+            res.body = this->cc_->CoachCourseMessageQuery(md_,mid);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //根据id和变更教练姓名修改教练课程信息
+    http_svr_.Post("/UpdateUserCoachCourseMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          int mid = stoi(req_value["member_id"].asString());
+          if(!this->cc_->UpdateCoachCourseMessage(md_,req_value))
+            cout << "UpdateUserCoachCourseMessage failed ! " << endl;
+          else 
+            res.body = this->cc_->CoachCourseMessageQuery(md_,mid);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    http_svr_.Post("/OrderEquipment",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          int eq_id = stoi(req_value["eq_id"].asString());
+          int member_id = stoi(req_value["member_id"].asString());
+          Json::Value res_value;
+          res_value["status"] = this->us_->OrderEquipment(md_,eq_id,member_id);
+          res.body = this->Serializa(res_value);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+          
+        });
+
+    http_svr_.Post("/UnOrderEquipment",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          int eq_id = stoi(req_value["eq_id"].asString());
+          int member_id = stoi(req_value["member_id"].asString());
+          if(this->us_->UnOrderEquipment(md_,eq_id,member_id))
+            res.body = this->eq_->EquipmentMessageQuery(md_,member_id);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+          
+        });
+    http_svr_.Get("/UserEquipmentQuery",[=](const Request& req,Response& res)
+        {
+          int mid = -1;
+
+          if(req.has_param("member_id"))
+            mid =stoi(req.get_param_value("member_id"));
+
+          if(mid != -1)
+            res.body = this->eq_->EquipmentMessageQuery(md_,mid);
+          else 
+            cout << "Get param not has p_id" << endl;
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+        //查询所有文章信息
+    http_svr_.Post("/UserStudyQuery",[=](const Request& req, Response& res)
+        {
+          res.body = this->uy_->UserStudyMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+   
+    //根据文章名称模糊搜索文章信息
+    http_svr_.Post("/UserStudyNameSearch",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          string UserStudy_name = req_value["study_title"].asString();
+          string str = "";
+          int flag = 30;
+          //防止请求过多造成程序崩溃，导致系统不响应
+          while(str.compare("") == 0 && flag)
+          {
+              str = this->uy_->UserStudyMessageSearch(md_,UserStudy_name);
+              flag--;
+          }
+          res.body = str;
+          res.set_header("content-Type","application/json;charset=UTF-8");
+          
+        });
+    //新增一个文章信息
+    http_svr_.Post("/AddUserStudyMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->uy_->AddUserStudyMessage(md_,req_value))
+            cout << "AddUserStudyMessage failed ! " << endl;
+          else 
+            res.body = this->uy_->UserStudyMessageQuery(md_);
+
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //根据文章id查询相应文章信息
+    http_svr_.Post("/IdToUserStudyMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          
+          int UserStudy_id = stoi(req_value["study_id"].asString());
+          res.body = this->uy_->IdToUserStudyMessage(md_,UserStudy_id);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    //修改文章信息
+    http_svr_.Post("/UpdateUserStudyMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->uy_->UpdateUserStudyMessage(md_,req_value))
+            cout << "UpdateUserStudyMessage failed ! " << endl;
+          else 
+            res.body = this->uy_->UserStudyMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+          });
+    //删除文章信息
+    http_svr_.Post("/DelUserStudyMessage",[=](const Request& req,Response& res)
+        {
+          Json::Reader r;
+          Json::Value req_value;
+          r.parse(req.body,req_value);
+          if(!this->uy_->DelUserStudyMessage(md_,req_value))
+            cout << "DelUserStudyMessage failed ! " << endl;
+          else 
+            res.body = this->uy_->UserStudyMessageQuery(md_);
+          res.set_header("content-Type","application/json;charset=UTF-8");
+
+        });
+    http_svr_.Get("/UserStudyQuery",[=](const Request& req,Response& res)
+        {
+          int uid = -1;
+
+          if(req.has_param("user_id"))
+            uid =stoi(req.get_param_value("user_id"));
+
+          if(uid != -1)
+            res.body = this->uy_->UserStudyMessageQuery(md_,uid);
+          else 
+            cout << "Get param not has p_id" << endl;
+          res.set_header("content-Type","application/json;charset=UTF-8");
+        });
+    http_svr_.Post("/incomeInfo",[=](const Request& req,Response& res)
+        {
+          res.body=this->cc_->incomeInfo(md_);
+          cout << res.body << endl;
+          res.set_header("content-Type","application/json;charset=UTF-8");
+
+        });
     
-  
     
+
       //绑定地址
       http_svr_.set_mount_point("/","./www");
       http_svr_.listen("0.0.0.0",18989);
@@ -657,9 +922,7 @@ class GymManageSystem
     //用于一些测试
     void test()
     {
-      cc_->test(md_);
-      cout << endl;
-      cout << cc_->CoachCourseMessageQuery(md_) << endl;
+      cout << this->us_->GetCoachName(md_,2) << endl;
     }
 
     string Serializa(Json::Value &v)
@@ -677,5 +940,7 @@ class GymManageSystem
     Course* cs_;
     Equipment* eq_;
     CoachCourse* cc_;
+    User* us_;
+    UserStudy* uy_;
 
 };

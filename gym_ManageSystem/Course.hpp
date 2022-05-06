@@ -14,19 +14,21 @@ using namespace std;
 
 struct CourseMessage
 {
-  CourseMessage(int cid=0,string cname="",double cmoney=0)
-    :course_id(cid),course_name(cname),course_price(cmoney)
+  CourseMessage(int cid=0,string cname="",double cmoney=0,string cdesc="")
+    :course_id(cid),course_name(cname),course_price(cmoney),course_desc(cdesc)
   {}
   CourseMessage(const CourseMessage& cm)
   {
     course_id = cm.course_id;
     course_name = cm.course_name;
     course_price = cm.course_price;
+    course_desc = cm.course_desc;
   }
   int course_id;
   string course_name;
   double course_price;
-  XPACK(O(course_id,course_name,course_price));
+  string course_desc;
+  XPACK(O(course_id,course_name,course_price,course_desc));
 };
 
 class Course{
@@ -61,8 +63,9 @@ class Course{
         int course_id = atoi(row[0]);                                                                                          
         string course_name(row[1]);
         double course_price = stod(string(row[2]));
+        string course_desc = row[3] == NULL ? "" : row[3];
 
-        CourseMessage cm(course_id,course_name,course_price);
+        CourseMessage cm(course_id,course_name,course_price,course_desc);
         lcm.push_back(cm);
         //统计数据的个数
         countNum++;
@@ -92,8 +95,9 @@ class Course{
       int course_id = atoi(row[0]);                                                                                          
       string course_name(row[1]);
       double course_price = stod(string(row[2]));
+      string course_desc = row[3] == NULL ? "" : row[3];
 
-      cs = CourseMessage(course_id,course_name,course_price);
+      cs = CourseMessage(course_id,course_name,course_price,course_desc);
       mysql_free_result(res);
     }
 
@@ -124,8 +128,9 @@ class Course{
         int course_id = atoi(row[0]);                                                                                          
         string course_name(row[1]);
         double course_price = stod(string(row[2]));
+        string course_desc = row[3] == NULL ? "" : row[3];
 
-        CourseMessage cm(course_id,course_name,course_price);
+        CourseMessage cm(course_id,course_name,course_price,course_desc);
         lcm.push_back(cm);
         //统计数据的个数
         countNum++;
@@ -145,10 +150,11 @@ class Course{
     {    
       string course_name = v["course_name"].asString();                         
       double course_price = stod(v["course_price"].asString());    
+      string course_desc = v["course_desc"].asString(); 
 
       char sql[1024]={0};         
-#define AddCourseMessage_SQL "insert into CourseInfo values(null,\'%s\',%lf);"
-      snprintf(sql,sizeof(sql)-1,AddCourseMessage_SQL,course_name.c_str(),course_price);    
+#define AddCourseMessage_SQL "insert into CourseInfo values(null,\'%s\',%lf,\'%s\');"
+      snprintf(sql,sizeof(sql)-1,AddCourseMessage_SQL,course_name.c_str(),course_price,course_desc.c_str());    
 
       return md_->ExecSQL(sql);     
     } 
@@ -169,28 +175,32 @@ class Course{
       int course_id = atoi(row[0]);                                                                                          
       string course_name(row[1]);
       double course_price = stod(string(row[2]));
+      string course_desc = row[3] == NULL ? "" : row[3];
 
-      CourseMessage cm(course_id,course_name,course_price);
+      CourseMessage cm(course_id,course_name,course_price,course_desc);
+
       mysql_free_result(res);
 
       //转成json
       string str = xpack::json::encode(cm);
       return str;
     }
-    //修改教练信息
+    //修改课程信息
     bool UpdateCourseMessage(ManageDB*& md_,Json::Value& v)
     {
       int course_id = stoi(v["course_id"].asString());
       string course_name = v["course_name"].asString();                         
       double course_price = stod(v["course_price"].asString());
+      string course_desc = v["course_desc"].asString(); 
+      
 
       char sql[1024]={0};
-#define UpdateCourseMessage_SQL "update CourseInfo set course_name =\'%s\',course_price=%lf where course_id=%d;"
-      snprintf(sql,sizeof(sql)-1,UpdateCourseMessage_SQL,course_name.c_str(),course_price,course_id);
+#define UpdateCourseMessage_SQL "update CourseInfo set course_name =\'%s\',course_price=%lf,course_desc = \'%s\' where course_id=%d;"
+      snprintf(sql,sizeof(sql)-1,UpdateCourseMessage_SQL,course_name.c_str(),course_price,course_desc.c_str(),course_id);
       return md_->ExecSQL(sql);
     }
 
-    //删除教练信息
+    //删除课程信息
     bool DelCourseMessage(ManageDB*& md_,Json::Value& v)
     {
       int course_id = stoi(v["course_id"].asString());

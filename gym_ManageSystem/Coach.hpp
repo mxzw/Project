@@ -15,8 +15,8 @@ using namespace std;
 
 struct CoachMessage
 {
-  CoachMessage(int cid=0,string cname="",string cphone="",int csex=-1,int cage=0,string cdate="",int ceduage=0,double csalary=0,int cstate=0)
-    :coach_id(cid),coach_name(cname),coach_phone(cphone),coach_sex(csex),coach_age(cage),coach_date(cdate),coach_educateAge(ceduage),coach_salary(csalary),coach_state(cstate)
+  CoachMessage(int cid=0,string cname="",string cphone="",int csex=-1,int cage=0,string cdate="",int ceduage=0,double csalary=0,int cstate=0,string cdesc="")
+    :coach_id(cid),coach_name(cname),coach_phone(cphone),coach_sex(csex),coach_age(cage),coach_date(cdate),coach_educateAge(ceduage),coach_salary(csalary),coach_state(cstate),coach_desc(cdesc)
   {}
   CoachMessage(const CoachMessage& cm)
   {
@@ -29,6 +29,7 @@ struct CoachMessage
     coach_educateAge = cm.coach_educateAge;
     coach_salary = cm.coach_salary;
     coach_state = cm.coach_state;
+    coach_desc = cm.coach_desc;
   }
   int coach_id;
   string coach_name;
@@ -39,7 +40,8 @@ struct CoachMessage
   int coach_educateAge;
   double coach_salary;
   int coach_state;
-  XPACK(O(coach_id,coach_name,coach_phone,coach_sex,coach_age,coach_date,coach_educateAge,coach_salary,coach_state));
+  string coach_desc;
+  XPACK(O(coach_id,coach_name,coach_phone,coach_sex,coach_age,coach_date,coach_educateAge,coach_salary,coach_state,coach_desc));
 };
 
 class Coach{
@@ -78,6 +80,7 @@ class Coach{
         int coach_educateAge = atoi(row[6]);                  
         double coach_salary = stod(string(row[7]));
         int coach_state = atoi(row[8]);
+        string coach_desc = row[9] == NULL ? "" : row[9];
 
         //将登录时间初始化为Data格式
         Date date(coach_date);
@@ -85,7 +88,7 @@ class Coach{
         coach_date = date.ToString();
 
 
-        CoachMessage cm(coach_id,coach_name,coach_phone,coach_sex,coach_age,coach_date,coach_educateAge,coach_salary,coach_state);
+        CoachMessage cm(coach_id,coach_name,coach_phone,coach_sex,coach_age,coach_date,coach_educateAge,coach_salary,coach_state,coach_desc);
         lcm.push_back(cm);
         //统计数据的个数
         countNum++;
@@ -127,10 +130,11 @@ class Coach{
       int coach_educateAge = atoi(row[6]);                  
       double coach_salary = stod(string(row[7]));
       int coach_state = atoi(row[8]);
+      string coach_desc = row[9] == NULL ? "" : row[9];
 
       Date date(coach_date);
       coach_date = date.ToString();
-      cm = CoachMessage(coach_id,coach_name,coach_phone,coach_sex,coach_age,coach_date,coach_educateAge,coach_salary,coach_state);
+      cm = CoachMessage(coach_id,coach_name,coach_phone,coach_sex,coach_age,coach_date,coach_educateAge,coach_salary,coach_state,coach_desc);
       //统计数据的个数
       mysql_free_result(res);
     }
@@ -183,6 +187,7 @@ class Coach{
         int coach_educateAge = atoi(row[6]);                  
         double coach_salary = stod(string(row[7]));
         int coach_state = atoi(row[8]);
+        string coach_desc = row[9] == NULL ? "" : row[9];
 
         //将登录时间初始化为Data格式
         Date date(coach_date);
@@ -190,7 +195,7 @@ class Coach{
         coach_date = date.ToString();
 
 
-        CoachMessage cm(coach_id,coach_name,coach_phone,coach_sex,coach_age,coach_date,coach_educateAge,coach_salary,coach_state);
+        CoachMessage cm(coach_id,coach_name,coach_phone,coach_sex,coach_age,coach_date,coach_educateAge,coach_salary,coach_state,coach_desc);
         lcm.push_back(cm);
         //统计数据的个数
         countNum++;
@@ -214,11 +219,12 @@ class Coach{
       string coach_date = v["coach_date"].asString();                                                               
       int coach_educateAge = stoi(v["coach_educateAge"].asString());
       double coach_salary = stod(v["coach_salary"].asString());
+      string coach_desc = v["coach_desc"].asString();
 
 
       char sql[1024]={0};     
-#define AddCoachMessage_SQL "insert into CoachInfo values(null,\'%s\',\'%s\',%d,%d,\'%s\',%d,%lf,0);"
-      snprintf(sql,sizeof(sql)-1,AddCoachMessage_SQL,coach_name.c_str(),coach_phone.c_str(),coach_sex,coach_age,coach_date.c_str(),coach_educateAge,coach_salary);
+#define AddCoachMessage_SQL "insert into CoachInfo values(null,\'%s\',\'%s\',%d,%d,\'%s\',%d,%lf,0,\'%s\');"
+      snprintf(sql,sizeof(sql)-1,AddCoachMessage_SQL,coach_name.c_str(),coach_phone.c_str(),coach_sex,coach_age,coach_date.c_str(),coach_educateAge,coach_salary,coach_desc.c_str());
 
 
       return md_->ExecSQL(sql); 
@@ -248,8 +254,9 @@ class Coach{
       int coach_educateAge = atoi(row[6]);                  
       double coach_salary = stod(string(row[7]));
       int coach_state = atoi(row[8]);
+      string coach_desc = row[9] == NULL ? "" : row[9];
 
-      CoachMessage cm(coach_id,coach_name,coach_phone,coach_sex,coach_age,coach_date,coach_educateAge,coach_salary,coach_state);
+      CoachMessage cm(coach_id,coach_name,coach_phone,coach_sex,coach_age,coach_date,coach_educateAge,coach_salary,coach_state,coach_desc);
 
       mysql_free_result(res);
 
@@ -267,10 +274,11 @@ class Coach{
       int coach_educateAge = stoi(v["coach_educateAge"].asString());
       double coach_salary = stod(v["coach_salary"].asString());
       int coach_state = stoi(v["coach_state"].asString());
+      string coach_desc = v["coach_desc"].asString();
 
       char sql[1024]={0};
-#define UpdateCoachMessage_SQL "update CoachInfo set coach_name =\'%s\', coach_phone=\'%s\',coach_sex=%d,coach_age=%d,coach_date=\'%s\',coach_educateAge=%d,coach_salary=%lf,coach_state=%d  where coach_id=%d;"
-      snprintf(sql,sizeof(sql)-1,UpdateCoachMessage_SQL,coach_name.c_str(),coach_phone.c_str(),coach_sex,coach_age,coach_date.c_str(),coach_educateAge,coach_salary,coach_state,coach_id);
+#define UpdateCoachMessage_SQL "update CoachInfo set coach_name =\'%s\', coach_phone=\'%s\',coach_sex=%d,coach_age=%d,coach_date=\'%s\',coach_educateAge=%d,coach_salary=%lf,coach_state=%d , coach_desc=\'%s\' where coach_id=%d;"
+      snprintf(sql,sizeof(sql)-1,UpdateCoachMessage_SQL,coach_name.c_str(),coach_phone.c_str(),coach_sex,coach_age,coach_date.c_str(),coach_educateAge,coach_salary,coach_state,coach_desc.c_str(),coach_id);
       return md_->ExecSQL(sql);
     }
     //删除教练信息

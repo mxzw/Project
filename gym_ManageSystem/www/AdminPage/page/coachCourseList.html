@@ -19,6 +19,7 @@
     <script type="text/javascript" src="../static/date/bootstrap-datetimepicker.min.js"></script>
 
     <script>
+        $('#id').val("1");
         $(function () {
             //在增加教练课程信息中，点击课程时进行查询
             $("#subject").change(function () {
@@ -320,23 +321,27 @@
             $('#type').text("");
             $('#dqdate').text("");
             $('#hystatic').text("");
-            $.post("../../CoachCourseQuery",{},function (data) {
-                var e=data["data"];
-                var ss ="";
-                var ssss="";
-                var sss="<option value='-1'>"+"--请选择--"+"</option>";
+            $.ajaxSettings.async = false;
+            $.post("../../CoachQuery",{},function (data) {
+                var e = data["data"];
+                var ss = "";
+                var ssss = "";
+                var sss = "<option value='-1'>" + "--请选择--" + "</option>";
                 $(e).each(function () {
                     /*$('#coach').append('<option value='+this.coachId+' >'+this.coachName+'</option>');*/
-                    ss += "<option value='"+this.cm.coach_id+"'>"+"✨"+this.cm.coach_name+"</option>";
-                    ssss=sss+ss;
+                    ss += "<option value='" + this.coach_id + "'>" + "✨" + this.coach_name + "</option>";
+                    ssss = sss + ss;
                     $('#coach').html(ssss);
                 })
+            });
+            $.post("../../CourseQuery",{},function (data) {
+                var e = data["data"];
                 var tt ="";
                 var tttt="";
                 var ttt="<option value='-1'>"+"--请选择--"+"</option>";
                 $(e).each(function () {
                     /* $('#subject').append('<option value='+this.subId+' >'+this.subname+'</option>');*/
-                    tt += "<option value='"+this.cs.course_id+"'>"+"💕"+this.cs.course_name+"</option>";
+                    tt += "<option value='"+this.course_id+"'>"+"💕"+this.course_name+"</option>";
                     tttt=ttt+tt;
                     $('#subject').html(tttt);
                 })
@@ -380,6 +385,7 @@
                             returnData["purchase_date"]=date;
                             returnData["purchase_state"]=state;
                             returnData["purchase_note"]=remark;
+                            returnData["purchase_money"] = countprice;
                             $.ajax(
                                 {
                                     url:"../../AddCoachCourseMessage",
@@ -408,6 +414,7 @@
             $("#subject").parent().find("span").remove();
             $("#sl").parent().find("span").remove();
             $("#ssq").parent().find("span").remove();
+            $("#zl").parent().find("span").remove();
 
 
             var kh = $("#kh").val().trim();
@@ -455,6 +462,11 @@
 
             if(!(/^[0-9,.]*$/.test(ssq))){
                 $("#ssq").parent().append("<span style='color:red'>实收钱只能为正整数或小数</span>");
+                return false;
+            }
+            var zl = $("#zl").val().trim();
+            if(!(/^[0-9,.]*$/.test(zl))){
+                $("#zl").parent().append("<span style='color:red'>找零只能为正整数或小数</span>");
                 return false;
             }
 

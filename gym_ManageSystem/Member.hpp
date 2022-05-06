@@ -100,6 +100,23 @@ class Member
       return md_->ExecSQL(sql);
 
     }
+    bool AddUserMember(ManageDB*& md_,Json::Value& v)
+    {
+      string member_name = v["member_name"].asString();
+      string member_phone = v["member_phone"].asString();
+      int member_sex = stoi(v["member_sex"].asString());
+      int member_typeid = stoi(v["member_typeid"].asString());
+      int member_age = stoi(v["member_age"].asString());
+      string login_date = v["login_date"].asString();
+      int user_id = stoi(v["user_id"].asString());
+
+      char sql[1024]={0};
+#define AddUserMember_SQL "insert into MemberInfo values(null,\'%s\',\'%s\',%d,%d,%d,1,\'%s\',%d,0);"
+      snprintf(sql,sizeof(sql)-1,AddUserMember_SQL,member_name.c_str(),member_phone.c_str(),member_sex,member_age,member_typeid,login_date.c_str(),user_id);
+
+      return md_->ExecSQL(sql);
+
+    }
     //查询所有会员卡的类型
     string MemberCardQuery(ManageDB*& md_)
     {

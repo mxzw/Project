@@ -5,10 +5,22 @@
 <script src="../static/echarts.min.js"></script>
 <head>
     <title>收入统计图</title>
+    <link rel="stylesheet" href="../static/bootstrap/css/bootstrap.css" />
+    <link rel="stylesheet" href="../static/table/bootstrap-table.min.css" />
+    <script type="text/javascript" src="../static/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../static/bootstrap/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="../static/table/bootstrap-table.js"></script>
+    <script type="text/javascript" src="../static/table/locale/bootstrap-table-zh-CN.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="../static/sweetalert/sweetalert.css" />
+    <script type="text/javascript" src="../static/sweetalert/sweetalert.min.js"></script>
+
+    <link rel="stylesheet" href="../static/date/bootstrap-datetimepicker.min.css" />
+    <script type="text/javascript" src="../static/date/Moment.js"></script>
+    <script type="text/javascript" src="../static/date/bootstrap-datetimepicker.min.js"></script>
 </head>
 <body background="../static/HTmoban/images/tongji4.jpg">
 <div class="panel panel-default">
-    <!--
+
     <div class="panel-body" style="width:400px; display: inline-block">
         <select id="xuan" class="form-control" oninput="cha()" style="width:200px; margin-right: 10px; float: left">
             <option value="1">柱状图</option>
@@ -16,15 +28,17 @@
             <option value="3">折线图</option>
         </select>
 
-    </div> -->
+    </div>
     <div id="main" style="width: 1100px;height:550px;">
 
     </div>
 
 
 </div>
-<!--
+
 <script type="text/javascript">
+
+    $.ajaxSettings.async = false;
     // 基于准备好的dom，初始化echarts实例
     var myChart = echarts.init(document.getElementById('main'));
 
@@ -33,7 +47,7 @@
         if (a == 1) {
             option = {
                 title: {
-                    text: '2020年每月收入统计'
+                    text: '2022年每月收入统计'
                 },
                 tooltip: {},
                 legend: {
@@ -59,7 +73,7 @@
             //    注解 @RequestMapping 可以用在类定义处和方法定义处。
             //          类定义处：规定初步的请求映射，相对于web应用的根目录；
             //          方法定义处：进一步细分请求映射，相对于类定义处的URL。如果类定义处没有使用该注解，则方法标记的URL相对于根目录而言；
-            $.post('${pageContext.request.contextPath}/cz/tongji', {}, function (data) {
+            $.post('../../incomeInfo', {}, function (data) {
                 //重新给table绑定数据
                 myChart.setOption({
                     xAxis: {
@@ -75,7 +89,7 @@
         } else if (a == 2) {
             option = {
                 title: {
-                    text: '2020年每月收入统计',
+                    text: '2022年每月收入统计',
                     subtext: '',
                     x: 'center'
                 },
@@ -144,7 +158,7 @@
             //饼图动态赋值
             $.ajax({
                 type: "post",
-                url: "${pageContext.request.contextPath}/cz/tongji",
+                url: "../../incomeInfo",
                 cache: false,    //禁用缓存
                 dataType: "json",
                 success: function (result) {
@@ -175,7 +189,7 @@
         } else if (a == 3) {
             option = {
                 title: {
-                    text: '2020年每月收入统计'
+                    text: '2022年每月收入统计'
                 },
                 xAxis: {
                     type: 'category',
@@ -196,7 +210,7 @@
 
             // 使用刚指定的配置项和数据显示图表。
             myChart.setOption(option);
-            $.post('${pageContext.request.contextPath}/cz/tongji', {}, function (data) {
+            $.post('../../incomeInfo', {}, function (data) {
                 //重新给table绑定数据
                 myChart.setOption({
                     xAxis: {
@@ -237,7 +251,7 @@
 
     // 使用刚指定的配置项和数据显示图表。
     myChart.setOption(option);
-    $.post('${pageContext.request.contextPath}/cz/tongji', {}, function (data) {
+    $.post('../../incomeInfo', {}, function (data) {
         //重新给table绑定数据
         myChart.setOption({
             xAxis: {
@@ -250,7 +264,7 @@
             }]
         });
     });
-</script>  -->
+</script>
 
 </body>
 </html>

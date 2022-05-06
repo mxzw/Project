@@ -76,10 +76,11 @@ class CoachCourse{
       string purchase_date = v["purchase_date"].asString();
       int purchase_state = stoi(v["purchase_state"].asString());
       string purchase_note = v["purchase_note"].asString();
+      double purchase_money = stod(v["purchase_money"].asString());
 
       char sql[1024]={0};                     
-#define AddCoachCourseMessage_SQL "insert CoachCourseList value(null,%d,%d,%d,%d,\'%s\',%d,\'%s\');"
-      snprintf(sql,sizeof(sql)-1,AddCoachCourseMessage_SQL,member_id,coach_id,course_id,purchase_num,purchase_date.c_str(),purchase_state,purchase_note.c_str());
+#define AddCoachCourseMessage_SQL "insert CoachCourseList value(null,%d,%d,%d,%d,\'%s\',%d,\'%s\',%lf);"
+      snprintf(sql,sizeof(sql)-1,AddCoachCourseMessage_SQL,member_id,coach_id,course_id,purchase_num,purchase_date.c_str(),purchase_state,purchase_note.c_str(),purchase_money);
 
       return md_->ExecSQL(sql);
     }
@@ -139,6 +140,63 @@ class CoachCourse{
       str = prev + str + "}";  
       return str;
     }
+
+    string CoachCourseMessageQuery(ManageDB*& md_,int mid)
+    {
+      // 将器材的信息存储在链表中                     
+      list<CoachCourseMessage> lcm;                     
+      lcm.clear();                     
+      //统计器材信息的个数                     
+      int countNum = 0;                     
+
+      char sql[1024]={0};                     
+#define UserCoachCourseMessageQuery_SQL "select * from CoachCourseList where member_id=%d;"
+      snprintf(sql,sizeof(sql)-1,UserCoachCourseMessageQuery_SQL,mid);     
+      MYSQL_RES* res;                                                  
+      if(!md_->ExecSQL(sql,res))          
+      {                                              
+        cout << "ExecSQL failed : CoachCourseMessageQuery, sql is " << sql << endl;
+        mysql_free_result(res);                                                             
+        return "";                                  
+      }                                
+      //unsigned int len = mysql_num_fields(res);
+      //查出来的每一行数据存储在row中                                 
+      MYSQL_ROW row;                                       
+      while((row = mysql_fetch_row(res))!=NULL)
+      {                                                             
+        int p_id = atoi(row[0]);                                                                                          
+        int member_id = atoi(row[1]);                                                                                          
+        int coach_id = atoi(row[2]);                                                                                          
+        int course_id = atoi(row[3]);                                                                                          
+        int purchase_num = atoi(row[4]);    
+        string purchase_date(row[5]);
+        int purchase_state = atoi(row[6]);    
+        string purchase_note(row[7]);
+
+        struct UserMessage um;
+        mb_->QueryAllMemberMessage(md_,member_id,um);
+        struct CoachMessage cm;
+        ch_->QueryAllCoachMessage(md_,coach_id,cm);
+        struct CourseMessage cs;
+        cs_->QueryAllCourseMessage(md_,course_id,cs);
+
+        double purchase_money = cs.course_price * purchase_num;
+
+        CoachCourseMessage cc(p_id,um,cm,cs,purchase_num,purchase_date,purchase_state,purchase_note,purchase_money);
+        lcm.push_back(cc);
+        //统计数据的个数
+        countNum++;
+      }
+      mysql_free_result(res);
+
+      //转成json
+      string str = xpack::json::encode(lcm);
+
+      string prev = "{\"count\":"+ to_string(countNum) +",\"data\":";
+      str = prev + str + "}";  
+      return str;
+    }
+
 
     //根据pid查询返回一行的教练课程信息给前端
     string OneRowMessageQuery(ManageDB*& md_,int& pid)
@@ -266,6 +324,37 @@ class CoachCourse{
       cout << endl;
 
     }
+    string incomeInfo(ManageDB*& md_)
+    {
+      string date[12] = {"2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12"};
+
+      vector<double> vd;
+      for(int i = 0; i < 12; ++i)
+      {
+        string sql = "select sum(purchase_money) from CoachCourseList where purchase_date like \'" + date[i] + "%\';";
+        cout << "sql is " << sql << endl;
+        MYSQL_RES* res;                                                  
+        if(!md_->ExecSQL(sql.c_str(),res))          
+        {                                              
+          cout << "ExecSQL failed : incomeInfo, sql is " << sql << endl;
+          mysql_free_result(res);                                                             
+          return "";                                  
+        }                                
+        MYSQL_ROW row = mysql_fetch_row(res);
+        if(row[0] == NULL)
+        {
+          vd.push_back(0.0);
+        }
+        else 
+        {
+          vd.push_back(stod(string(row[0])));
+        }
+        mysql_free_result(res);                                                             
+        
+      }
+      return xpack::json::encode(vd);
+    }
+
   private:
     Member* mb_;
     Coach* ch_;

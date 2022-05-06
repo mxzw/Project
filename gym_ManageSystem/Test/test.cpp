@@ -1,8 +1,14 @@
 //这是用来做测试的文件
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <iostream>
 #include <vector>
 #include <list>
 
+#include <jsoncpp/json/json.h>
+
+#include "../tools.hpp"
 #include "../httplib.h"
 #include "../Date.hpp"
 #include "../tools.hpp"
@@ -118,8 +124,62 @@ void test3()
 
 }*/
 
+struct imgMess{
+  int id;
+  string base64;
+  XPACK(O(id,base64));
+};
+void test7()
+{
+  cout << "test 7" << endl;
+        FILE* fd = fopen("img.json","a+");
+        struct imgMess rim;
+        fread(&rim,sizeof(struct imgMess)+1,1,fd);
+        cout <<"id is : " <<rim.id << endl;
+        cout << "base64 is : "<<rim.base64 << endl;
+        fclose(fd);
+}
+void test6()
+{
+  Server sv;
+  sv.Post("/imgSave",[=](const Request& res,Response& req)
+      {
+        Json::Reader r;
+        Json::Value v;
+        r.parse(res.body,v);
+        struct imgMess im;
+        xpack::json::decode(res.body,im);
+        cout <<"id is : " <<im.id << endl;
+        cout << "base64 is : "<<im.base64 << endl;
+        FILE* fd = fopen("img.json","a+");
+        /*
+        string wstr = "";
+        vector<string> vs;
+        string rstr = res.body;
+        StringTools::Split(rstr,"&",vs);
+        for(auto &e : vs){
+          vector<string> s;
+          StringTools::Split(e,"=",s);
+          wstr += "\"" + s[0] + "\"" + ":" + "\"" + s[1] + "\"" + ",";
+        }
+        write(fd,wstr.c_str(),wstr.size()); 
+        string wstr = "";
+        wstr += string("\"id\":") + "\"" + v["id"].asString() + "\"" + ",";
+        wstr += string("\"base64\":") + "\"" + v["base64"].asString() + "\"";
+        wstr = "{" + wstr + "}," + "\n"; */
+        //write(fd,wstr.c_str(),wstr.size());
+        fwrite(&im,sizeof(struct imgMess),1,fd);
+        fclose(fd);
+        test7();
+      });
+
+  sv.set_mount_point("/","./");
+  sv.listen("0.0.0.0",17979);
+  
+}
+
 int main()
 {
-  test5();
+  test7();
   return 0;
 }
