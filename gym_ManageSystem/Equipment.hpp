@@ -165,10 +165,11 @@ class Equipment{
     {    
       string eq_name = v["eq_name"].asString();                         
       string eq_text = v["eq_text"].asString();    
+      int eq_num = stoi(v["eq_num"].asString());
     
       char sql[1024]={0};         
-#define AddEquipmentMessage_SQL "insert into EquipmentInfo values(null,\'%s\',\'%s\');"
-      snprintf(sql,sizeof(sql)-1,AddEquipmentMessage_SQL,eq_name.c_str(),eq_text.c_str());    
+#define AddEquipmentMessage_SQL "insert into EquipmentInfo values(null,\'%s\',\'%s\',%d);"
+      snprintf(sql,sizeof(sql)-1,AddEquipmentMessage_SQL,eq_name.c_str(),eq_text.c_str(),eq_num);    
     
       return md_->ExecSQL(sql);     
     } 

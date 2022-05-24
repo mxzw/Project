@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Profile | Fitness Admin Template</title>
+    <title>个人信息</title>
     <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -30,6 +30,7 @@
     <script>
         $(function ()
         {
+            $('#uid').val("-1");
             $.ajax(
                 {
                     url: "../GetUserAttributes",
@@ -44,6 +45,7 @@
                     }
 
                 })
+
             var returnData = {};
             returnData["user_id"] = $('#uid').val();
 
@@ -161,7 +163,7 @@
                 <div class="nav_profile">
                     <div class="media profile-left">
                         <a class="pull-left profile-thumb" href="./index.html">
-                            <img src="img/authors/avatar1.jpg" class="img-circle" alt="User Image">
+                            <img src="img/authors/tx.jpg" class="img-circle" alt="User Image">
                         </a>
                         <div class="content-profile">
                             <h4 class="media-heading">Welcome !</h4>
@@ -444,7 +446,7 @@
                             <div class="col-sm-4">
                                 <div class="form-group">
                                     <div class="text-center mbl">
-                                        <img src="img/authors/avatar1.jpg" alt="img" width="200" height="150"
+                                        <img src="img/authors/tx.jpg" alt="img" width="200" height="150"
                                              class="img-responsive img-bor"/>
                                     </div>
                                 </div>

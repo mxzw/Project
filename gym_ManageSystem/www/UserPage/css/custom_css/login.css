@@ -1,6 +1,6 @@
 /* Fonts Imported from Google */
 
-@import url(../../../../fonts.googleapis.com/css¿family=Roboto_400,700.css);
+@import url(../../../../fonts.googleapis.com/cssï¿½family=Roboto_400,700.css);
 
 /*   Core: General style
 ----------------------------*/
@@ -9,7 +9,7 @@ body {
     font-family: 'Roboto', sans-serif;
     height: 100%;
     padding-top: 8%;
-    background: url(../../img/login-bg1.png) no-repeat center center fixed;
+    background: url(../../../img/login-bg1.png) no-repeat center center fixed;
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;

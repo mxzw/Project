@@ -10,7 +10,7 @@ body {
     font-family: 'Roboto', sans-serif;
     height: 100%;
     padding-top: 8%;
-    background: url(../../img/login-bg1.png) no-repeat center center fixed;
+    background: url(../../../img/login-bg1.png) no-repeat center center fixed;
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;
