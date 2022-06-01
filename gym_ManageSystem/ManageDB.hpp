@@ -25,7 +25,7 @@ class ManageDB{
     // 连接数据库，采用mysql_real_connect（）函数
     bool ConnectDB()
     {
-      const char* host ="192.168.13.128";
+      const char* host ="192.168.13.129";
       const char* user = "zw";
       const char* passwd = "123456";
       const char* db = "GymManageSys";
